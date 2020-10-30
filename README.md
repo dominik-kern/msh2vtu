@@ -12,10 +12,14 @@ positional arguments:
   filename              Gmsh mesh (\*.msh)
 
 optional arguments:
-  -h, --help            show this help message and exit
+ 
+ -h, --help            show this help message and exit
+
   --renumber            Renumber physical IDs of domains starting by zero (boundary IDs are not
                         changed)
+
   --rename              Rename "gmsh:physical" to "MaterialIDs"
+
   -o OUTPUT, --output OUTPUT
                         Base name of output files; if not given, then it defaults to basename of
                         inputfile.

@@ -104,17 +104,19 @@ for cellblock_data, cellblock in zip(physical_cell_data, cells):
 
 # write results to file
 if len(domain_cell_data):  # only if there are data to write
-	meshio.write(output_basename+"_domain.vtu", 
-	meshio.Mesh(points=points, cells=domain_cells, cell_data={domain_data_string: domain_cell_data})) 
+	domain_mesh=meshio.Mesh(points=points, cells=domain_cells, cell_data={domain_data_string: domain_cell_data}) 
+	domain_mesh.prune()	# get rid of out-of-mesh nodes
+	meshio.write(output_basename+"_domain.vtu", domain_mesh)
 
 if len(boundary_cell_data): # only if there are data to write
-	if args.rename:
-		meshio.write(output_basename+"_boundary.vtu",
- 		meshio.Mesh(points=points, cells=boundary_cells) )
+	if args.rename:	# write no renamed cell data ("MaterialIDs") to boundaries
+		boundary_mesh=meshio.Mesh(points=points, cells=boundary_cells)
 	else:
-		meshio.write(output_basename+"_boundary.vtu",
- 		meshio.Mesh(points=points, cells=boundary_cells, 
-		cell_data={boundary_data_string: boundary_cell_data}) )
+ 		boundary_mesh=meshio.Mesh( points=points, cells=boundary_cells, 
+		cell_data={boundary_data_string: boundary_cell_data}) 
+	#boundary_mesh.prune() # get rid of out-of-mesh nodes
+	meshio.write(output_basename+"_boundary.vtu", boundary_mesh)
+
 
 # now we want to extract subdomains given by physical groups in gmsh
 # so we need an additional loop 
@@ -137,10 +139,11 @@ for name, data in field_data.items():
 	if len(selected_cell_data):
 		outputfilename=output_basename+"_physical_group_"+name+".vtu"	
 		if data[geo_index]==line_id and args.rename:
-			meshio.write(outputfilename, 
-			meshio.Mesh(points=points, cells=selected_cells)) 
+			physical_submesh=meshio.Mesh(points=points, cells=selected_cells)
 		else:
-			meshio.write(outputfilename, 
-			meshio.Mesh(points=points, cells=selected_cells, 
-			cell_data={selection_data_string: selected_cell_data} )) 
+			physical_submesh=meshio.Mesh( points=points, cells=selected_cells, 
+			cell_data={selection_data_string: selected_cell_data} ) 
+		if data[geo_index]==triangle_id:
+			physical_submesh.prune()
+		meshio.write(outputfilename, physical_submesh)
 

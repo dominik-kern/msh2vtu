@@ -1,5 +1,5 @@
 # TODO extension to 3D
-
+# TODO ascii
 import meshio
 import os
 import numpy 
@@ -9,10 +9,11 @@ import warnings
 
 # parsing command line arguments
 parser = argparse.ArgumentParser()
-parser = argparse.ArgumentParser(description='Prepare Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and save them in vtu-format. Note that all mesh entities must belong to a physical group!', epilog='No cell data are written for boundaries (lines)')
-parser.add_argument('filename', help='Gmsh mesh file (*.msh) as input data')
-parser.add_argument('--renumber', action='store_true',help='Renumber physical IDs of domains starting by zero (boundary IDs are not changed)')
-parser.add_argument('--rename', action='store_true', help='Rename "gmsh:physical" to "MaterialIDs for domains"')
+parser = argparse.ArgumentParser(description='Prepare Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and save them in vtu-format. Note that all mesh entities must belong to a physical group!', epilog='No cell data are written for boundaries (lines).')
+parser.add_argument('filename', help='Gmsh mesh file (*.msh) as input data.')
+parser.add_argument('--renumber', action='store_true',help='Renumber physical IDs of domains starting by zero (boundary IDs are not changed).')
+parser.add_argument('--rename', action='store_true', help='Rename "gmsh:physical" to "MaterialIDs for domains".')
+parser.add_argument('-a','--ascii', action='store_true', help='Save output files (*.vtu) in ascii format.')
 parser.add_argument('-o','--output', default='', help='Base name of output files; if not given, then it defaults to basename of inputfile.')
 
 args = parser.parse_args()
@@ -100,13 +101,13 @@ for cellblock_data, cellblock in zip(physical_cell_data, cells):
 # write results to file
 if len(domain_cells):  # only if there are data to write
 	domain_mesh=meshio.Mesh(points=points, cells=domain_cells, cell_data={domain_data_string: domain_cell_data}) 
-	domain_mesh.prune()	# get rid of out-of-mesh nodes
-	meshio.write(output_basename+"_domain.vtu", domain_mesh)
+	#domain_mesh.prune()	# get rid of out-of-mesh nodes
+	meshio.write(output_basename+"_domain.vtu", domain_mesh, binary=not args.ascii)
 
 if len(boundary_cells): # only if there are data to write
 	boundary_mesh=meshio.Mesh(points=points, cells=boundary_cells)
 	#boundary_mesh.prune() # get rid of out-of-mesh nodes
-	meshio.write(output_basename+"_boundary.vtu", boundary_mesh)	# TODO out-of-mesh nodes
+	meshio.write(output_basename+"_boundary.vtu", boundary_mesh, binary=not args.ascii)	# TODO out-of-mesh nodes
 
 
 # now we want to extract subdomains given by physical groups in gmsh
@@ -140,5 +141,5 @@ for name, data in field_data.items():
 			physical_submesh=meshio.Mesh( points=points, cells=selected_cells, 
 			cell_data={selection_data_string: selected_cell_data} ) 
 			physical_submesh.prune()
-		meshio.write(outputfilename, physical_submesh, binary=False)
+		meshio.write(outputfilename, physical_submesh, binary=not args.ascii)
 

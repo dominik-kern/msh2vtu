@@ -101,7 +101,7 @@ for cellblock_data, cellblock in zip(physical_cell_data, cells):
 # write results to file
 if len(domain_cells):  # only if there are data to write
 	domain_mesh=meshio.Mesh(points=points, cells=domain_cells, cell_data={domain_data_string: domain_cell_data}) 
-	#domain_mesh.prune()	# get rid of out-of-mesh nodes
+#	domain_mesh.prune()	# get rid of out-of-mesh nodes
 	meshio.write(output_basename+"_domain.vtu", domain_mesh, binary=not args.ascii)
 
 if len(boundary_cells): # only if there are data to write
@@ -134,9 +134,15 @@ for name, data in field_data.items():
 		if data[geo_index]==line_id: 
 			#selected_points=selected_cell_data.flatten()
 			#print(selected_points)
-			oldpoints=numpy.concatenate([selected_cells[k][1] for k in range(len(selected_cells)) ]) 
-			# TODO my_prune
-			physical_submesh=meshio.Mesh(points=points, cells=selected_cells)
+			old_cells=numpy.concatenate([selected_cells[k][1] for k in range(len(selected_cells)) ]) 
+			shape2d=old_cells.shape
+			old_points=old_cells.flatten()			
+			unique_points, unique_inverse = numpy.unique(old_points, return_inverse=True)
+			new_points=points[unique_points]	# node numbering starts with 1
+			new_cells=unique_inverse.reshape(shape2d)+1	# node numbering starts with 1				
+			print(new_points)
+			print(new_cells)
+			physical_submesh=meshio.Mesh(points=new_points, cells=[meshio.CellBlock(cell_type, new_cells)])
 		else:
 			physical_submesh=meshio.Mesh( points=points, cells=selected_cells, 
 			cell_data={selection_data_string: selected_cell_data} ) 

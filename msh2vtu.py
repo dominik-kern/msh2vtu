@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # TODO extension to 3D
 
 import meshio
@@ -42,13 +43,11 @@ mesh = meshio.read(args.filename)
 # cells: list( cellblocks( type='line'/'triangle', data=2Darray(element, points) ))
 # cell_data: dict('gmsh:physical', 2Darray(geo_tag, ph_tag))
 # field_data: dict('top'/'bottom'/PH_NAME, 1Darray (ph_tag, geo_type)	
-points, cells = mesh.points, mesh.cells
-cell_data, field_data = mesh.cell_data, mesh.field_data
+points, cells_dict = mesh.points, mesh.cells_dict
+cell_data_dict, field_data = mesh.cell_data_dict, mesh.field_data
 
 
 # some variable declarations
-type_index=0	# to access type ('line' or 'triangle') of a cellblock in cells
-data_index=1	# to access data (nodes of elements) of a cellblock in cells
 ph_index=0	# to access physical id in field data
 geo_index=1	# to access geometrical id in field data
 line_id=1	# geometry type 
@@ -56,8 +55,6 @@ triangle_id=2	# geometry type
 gmshdict={line_id: 'line', triangle_id: 'triangle'}	# gmsh convention
 gmsh_string='gmsh:physical'
 ogs_string='MaterialIDs'
-# an index field to access the cells corresponding to a physical group
-physical_cell_data=cell_data[gmsh_string]	# array of ph_no for all elements in all cellblocks
 
 # if user wants to change 'gmsh:physical" to "MaterialIDs" or not
 if args.rename:
@@ -80,69 +77,50 @@ if args.renumber:
 			id_list_domains.append(dataset[0])  # append physical id
 	if len(id_list_domains):	# if there are some domain..
 		id_offset=min(id_list_domains)	# ..then find minimal physical id
-	
 
-# A mesh consists of cellblocks, now we go through them
-# first for domain and boundary, easily recognizable by celltype
-domain_cells=[] 	# start with empty list
-domain_cell_data=[]	# start with empty list
-boundary_cells=[]	# start with empty list
-#boundary_cell_data=[] 	# not written (may cause trouble)
-for cellblock_data, cellblock in zip(physical_cell_data, cells):
 
-	if cellblock[type_index]==gmshdict[line_id]:
-		boundary_cells.append(cellblock)
-		#boundary_cell_data.append(cellblock_data)
+# extract domain and boundary mesh	
 
-	if cellblock[type_index]==gmshdict[triangle_id]:
-		domain_cells.append(cellblock)
-		domain_cell_data.append(cellblock_data-id_offset)
-
+domain_cells=mesh.cells_dict[gmshdict[triangle_id]]
+domain_cell_data=mesh.cell_data_dict[gmsh_string][gmshdict[triangle_id]]-id_offset
 # write results to file
-if len(domain_cells):  # only if there are data to write
-	domain_mesh=meshio.Mesh(points=points, cells=domain_cells, cell_data={domain_data_string: domain_cell_data}) 
-	#domain_mesh.prune()	# get rid of out-of-mesh nodes RESULTS IN MESH DEFECTS
+if len(domain_cells) and len(domain_cells)==len(domain_cell_data):  # only if there are (consistent) data to write
+	domain_mesh=meshio.Mesh(points=points, cells=[(gmshdict[triangle_id], domain_cells)], cell_data={domain_data_string:[domain_cell_data]})
+	domain_mesh.prune()
 	meshio.write(output_basename+"_domain.vtu", domain_mesh, binary=not args.ascii)
 
-if len(boundary_cells): # only if there are data to write
-	boundary_mesh=meshio.Mesh(points=points, cells=boundary_cells)
-	#boundary_mesh.prune() # get rid of out-of-mesh nodes GIVES AN ERROR
-	meshio.write(output_basename+"_boundary.vtu", boundary_mesh, binary=not args.ascii)	# TODO out-of-mesh nodes
-
+boundary_cells=mesh.cells_dict[gmshdict[line_id]]
+# write results to file
+if len(boundary_cells):  # only if there are data to write
+	boundary_mesh=meshio.Mesh(points=points, cells=[(gmshdict[line_id], boundary_cells)])
+	#boundary_mesh.prune()   # strange, leads to error
+	meshio.write(output_basename+"_boundary.vtu", boundary_mesh, binary=not args.ascii)
 
 # Now we want to extract subdomains given by physical groups in gmsh,
 # so we need an additional loop. 
 
-# name=user-defined name of physical group, data=[physical_id, geometry_type]
+# name=user-defined name of physical group, data=[physical_id, geometry_id]
 for name, data in field_data.items():
 	
-	selected_cells=[] 	
-	selected_cell_data=[]
-	ph_id=data[ph_index]	# selection by physical id
-	cell_type=gmshdict[data[geo_index]]	# 'line' or 'triangle'
+	ph_id=data[ph_index]	# selection by physical id (user defined)
+	geo_id=data[geo_index]		# 1 or 2
+	cell_type=gmshdict[geo_id]	# 'line' or 'triangle'
+	selection_index=cell_data_dict[gmsh_string][cell_type]==ph_id
+	selected_cells=cells_dict[cell_type][selection_index]
+	selected_cell_data=cell_data_dict[gmsh_string][cell_type][selection_index]
 
-	for cellblock_data, cellblock in zip(physical_cell_data, cells):
-
-		# access matching data by an index field
-		selected_data=numpy.array(cellblock[data_index][cellblock_data==ph_id]) # select cells by physical id
-		selected_cellblock_data=cellblock_data[cellblock_data==ph_id] # also select corresponding cell data
-		if len(selected_data):	# append only nonzero-data
-			selected_cells.append(meshio.CellBlock(cell_type, selected_data))
-			selected_cell_data.append(selected_cellblock_data)
-	
-	if len(selected_cells):
-		outputfilename=output_basename+"_physical_group_"+name+".vtu"	
-		if data[geo_index]==line_id: 	# manual pruning of orphaned nodes
-			old_cells=numpy.concatenate([selected_cells[k][1] for k in range(len(selected_cells)) ])	# join active cells from all cellblocks 
-			shape2d=old_cells.shape
-			old_points=old_cells.flatten()	# "old" means from the input mesh and "new" appearing in the actual physical group			
-			unique_points, unique_inverse = numpy.unique(old_points, return_inverse=True)
+	if len(selected_cells):   # if there are some data
+		if data[geo_index]==line_id: 	# manual pruning of orphaned nodes and create submesh
+			original_shape=selected_cells.shape   # for reconstrution after flatten
+			old_points=selected_cells.flatten()	# "old" means from the input mesh and "new" appearing in the actual physical group			
+			unique_points, unique_inverse = numpy.unique(old_points, return_inverse=True)	# needs 1d-array (flattened)
 			new_points=points[unique_points]	# extract only used nodes
-			new_cells=unique_inverse.reshape(shape2d)+1	# cell connectivity corresponding to new node numbering (starting with 1)				
-			physical_submesh=meshio.Mesh(points=new_points, cells=[meshio.CellBlock(cell_type, new_cells)])
-		else:
-			physical_submesh=meshio.Mesh( points=points, cells=selected_cells, 
-			cell_data={selection_data_string: selected_cell_data} ) 
-			physical_submesh.prune()  # somehow here prune works correctly (if it is only one cellblock?)
-		meshio.write(outputfilename, physical_submesh, binary=not args.ascii)
+			new_cells=unique_inverse.reshape(original_shape)+1	# cell connectivity corresponding to new node numbering (starting with 1)				
+			submesh=meshio.Mesh(points=new_points, cells=[(cell_type, new_cells)])
+		else:   # create submesh, including cell_data, and prune it
+			submesh=meshio.Mesh( points=points, cells=[(cell_type, selected_cells)], 
+			cell_data={selection_data_string: [selected_cell_data]} ) 
+			submesh.prune()  # somehow here prune works correctly (if it is only one cellblock?)
+		outputfilename=output_basename+"_physical_group_"+name+".vtu"	
+		meshio.write(outputfilename, submesh, binary=not args.ascii)
 

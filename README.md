@@ -3,6 +3,7 @@
 Note, currently restricted to 2D meshes!
 
 **Usage:**
+```
 usage: msh2vtu.py [-h] [--renumber] [--ogs] [-a] [-o OUTPUT] filename
 
 Prepare Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and save them in vtu-format. Note that all mesh entities must belong to a physical group!
@@ -19,7 +20,7 @@ optional arguments:
                         Base name of output files; if not given, then it defaults to basename of inputfile.
 
 No cell data are written for boundaries (lines).
-
+```
 
 **Example:**
 A geological model of a sediment basin by Christian Silbermann

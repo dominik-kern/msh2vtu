@@ -21,31 +21,31 @@ def line_mesh_prune(points, input_cells):  # remove orphaned points
 # parsing command line arguments
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser(
-    description="Prepare Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and save them in vtu-format. Note that all mesh entities must belong to a physical group!",
+    description="Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and saves them in vtu-format. Note that all mesh entities must belong to a physical group!",
     epilog="No cell data are written for boundaries (lines).",
 )
-parser.add_argument("filename", help="Gmsh mesh file (*.msh) as input data.")
+parser.add_argument("filename", help="Gmsh mesh file (*.msh) as input data")
 parser.add_argument(
     "--renumber",
     action="store_true",
-    help="Renumber physical IDs of domains starting by zero (boundary IDs are ignored).",
+    help="renumber physical IDs of domains starting by zero (boundaries are ignored)",
 )
 parser.add_argument(
     "--ogs",
     action="store_true",
-    help='Rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32.',
+    help='rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32',
 )
 parser.add_argument(
     "-a",
     "--ascii",
     action="store_true",
-    help="Save output files (*.vtu) in ascii format.",
+    help="save output files (*.vtu) in ascii format",
 )
 parser.add_argument(
     "-o",
     "--output",
     default="",
-    help="Base name of output files; if not given, then it defaults to basename of inputfile.",
+    help="base name of output files; if not given, then it defaults to basename of inputfile",
 )
 
 args = parser.parse_args()

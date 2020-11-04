@@ -12,8 +12,8 @@ import warnings
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser(description='Prepare Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and save them in vtu-format. Note that all mesh entities must belong to a physical group!', epilog='No cell data are written for boundaries (lines).')
 parser.add_argument('filename', help='Gmsh mesh file (*.msh) as input data.')
-parser.add_argument('--renumber', action='store_true',help='Renumber physical IDs of domains starting by zero (boundary IDs are not changed).')
-parser.add_argument('--rename', action='store_true', help='Rename "gmsh:physical" to "MaterialIDs for domains".')
+parser.add_argument('--renumber', action='store_true',help='Renumber physical IDs of domains starting by zero (boundary IDs are ignored).')
+parser.add_argument('--ogs', action='store_true', help='Rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32.')
 parser.add_argument('-a','--ascii', action='store_true', help='Save output files (*.vtu) in ascii format.')
 parser.add_argument('-o','--output', default='', help='Base name of output files; if not given, then it defaults to basename of inputfile.')
 
@@ -57,7 +57,7 @@ gmsh_string='gmsh:physical'
 ogs_string='MaterialIDs'
 
 # if user wants to change 'gmsh:physical" to "MaterialIDs" or not
-if args.rename:
+if args.ogs:
 	#boundary_data_string=ogs_string # do not write MaterialID for boundaries
 	domain_data_string=ogs_string
 	selection_data_string=ogs_string	# only used for domains
@@ -83,6 +83,9 @@ if args.renumber:
 
 domain_cells=mesh.cells_dict[gmshdict[triangle_id]]
 domain_cell_data=mesh.cell_data_dict[gmsh_string][gmshdict[triangle_id]]
+if args.ogs:
+	domain_cell_data=numpy.int32(domain_cell_data)	# ogs needs MaterialIDs as int32 
+
 # write results to file
 if len(domain_cells) and len(domain_cells)==len(domain_cell_data):  # only if there are (consistent) data to write
 	domain_mesh=meshio.Mesh(points=points, cells=[(gmshdict[triangle_id], domain_cells)], cell_data={domain_data_string:[domain_cell_data - id_offset ]})
@@ -112,6 +115,8 @@ for name, data in field_data.items():
 	selection_index=cell_data_dict[gmsh_string][cell_type]==ph_id
 	selected_cells=cells_dict[cell_type][selection_index]
 	selected_cell_data=cell_data_dict[gmsh_string][cell_type][selection_index] 
+	if args.ogs:
+		selected_cell_data=numpy.int32(selected_cell_data)
 
 	if len(selected_cells):   # if there are some data
 		if data[geo_index]==line_id: 	# manual pruning of orphaned nodes and create submesh

@@ -25,7 +25,9 @@ No cell data are written for boundaries (lines).
 **Example:**
 A geological model of a sediment basin by Christian Silbermann
 
-From the input file *geolayers_2d.msh* are generated:    
+From the input file *geolayers_2d.msh* are generated
+``python3 msh2vtu example/geolayers_2d.msh``:
+
 - *geolayers_2d_boundary.vtu*,
 - *geolayers_2d_domain.vtu*,                 
 - *geolayers_2d_physical_group_RockBed.vtu*,

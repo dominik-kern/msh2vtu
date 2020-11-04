@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# TODO extension to 3D
+# TODO extension to 3D, also option to save 2D as [x,y] without z=0
 
 import meshio
 import os
@@ -82,12 +82,14 @@ if args.renumber:
 # extract domain and boundary mesh	
 
 domain_cells=mesh.cells_dict[gmshdict[triangle_id]]
-domain_cell_data=mesh.cell_data_dict[gmsh_string][gmshdict[triangle_id]]-id_offset
+domain_cell_data=mesh.cell_data_dict[gmsh_string][gmshdict[triangle_id]]
 # write results to file
 if len(domain_cells) and len(domain_cells)==len(domain_cell_data):  # only if there are (consistent) data to write
-	domain_mesh=meshio.Mesh(points=points, cells=[(gmshdict[triangle_id], domain_cells)], cell_data={domain_data_string:[domain_cell_data]})
+	domain_mesh=meshio.Mesh(points=points, cells=[(gmshdict[triangle_id], domain_cells)], cell_data={domain_data_string:[domain_cell_data - id_offset ]})
 	domain_mesh.prune()
 	meshio.write(output_basename+"_domain.vtu", domain_mesh, binary=not args.ascii)
+else:
+	print("No or inconsistent domain-cells found, no domain-mesh written.")
 
 boundary_cells=mesh.cells_dict[gmshdict[line_id]]
 # write results to file
@@ -95,6 +97,8 @@ if len(boundary_cells):  # only if there are data to write
 	boundary_mesh=meshio.Mesh(points=points, cells=[(gmshdict[line_id], boundary_cells)])
 	#boundary_mesh.prune()   # strange, leads to error
 	meshio.write(output_basename+"_boundary.vtu", boundary_mesh, binary=not args.ascii)
+else:
+	print("No boundary-cells found, no boundary-mesh written.") 
 
 # Now we want to extract subdomains given by physical groups in gmsh,
 # so we need an additional loop. 
@@ -107,7 +111,7 @@ for name, data in field_data.items():
 	cell_type=gmshdict[geo_id]	# 'line' or 'triangle'
 	selection_index=cell_data_dict[gmsh_string][cell_type]==ph_id
 	selected_cells=cells_dict[cell_type][selection_index]
-	selected_cell_data=cell_data_dict[gmsh_string][cell_type][selection_index]
+	selected_cell_data=cell_data_dict[gmsh_string][cell_type][selection_index] 
 
 	if len(selected_cells):   # if there are some data
 		if data[geo_index]==line_id: 	# manual pruning of orphaned nodes and create submesh
@@ -115,12 +119,24 @@ for name, data in field_data.items():
 			old_points=selected_cells.flatten()	# "old" means from the input mesh and "new" appearing in the actual physical group			
 			unique_points, unique_inverse = numpy.unique(old_points, return_inverse=True)	# needs 1d-array (flattened)
 			new_points=points[unique_points]	# extract only used nodes
-			new_cells=unique_inverse.reshape(original_shape)+1	# cell connectivity corresponding to new node numbering (starting with 1)				
+			new_cells=unique_inverse.reshape(original_shape)	# cell connectivity corresponding to new node numbering (starting with 1)				
 			submesh=meshio.Mesh(points=new_points, cells=[(cell_type, new_cells)])
-		else:   # create submesh, including cell_data, and prune it
+
+#			submesh=meshio.Mesh( points=points, cells=[(cell_type, selected_cells)] ) 
+#			submesh.prune()  # somehow here prune works correctly (if it is only one cellblock?)
+		elif data[geo_index]==triangle_id:   # create submesh, including cell_data, and prune it
 			submesh=meshio.Mesh( points=points, cells=[(cell_type, selected_cells)], 
-			cell_data={selection_data_string: [selected_cell_data]} ) 
+			cell_data={selection_data_string: [selected_cell_data - id_offset]} ) 
 			submesh.prune()  # somehow here prune works correctly (if it is only one cellblock?)
-		outputfilename=output_basename+"_physical_group_"+name+".vtu"	
+		else:
+			print("Unknown geometry id encountered, empty submesh.")
+			submesh=meshio.Mesh(points=[], cells=[])  
+		outputfilename=output_basename + "_physical_group_" + name + ".vtu"	
 		meshio.write(outputfilename, submesh, binary=not args.ascii)
+	else:
+		print("No cells found for physical group " + name + ", no submesh written.")
+
+
+# TODO def nodes,cells=my_prune()
+
 

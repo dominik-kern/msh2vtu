@@ -3,26 +3,23 @@
 Note, currently restricted to 2D meshes!
 
 **Usage:**
-python3 msh2vtu.py [-h] [--renumber] [--rename] [-o OUTPUT] filename
+usage: msh2vtu.py [-h] [--renumber] [--ogs] [-a] [-o OUTPUT] filename
 
-Prepare Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and
-save them in vtu-format.
+Prepare Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and save them in vtu-format. Note that all mesh entities must belong to a physical group!
 
 positional arguments:
-  filename              Gmsh mesh (\*.msh)
+  filename              Gmsh mesh file (*.msh) as input data.
 
 optional arguments:
- 
- -h, --help            show this help message and exit
-
-  --renumber            Renumber physical IDs of domains starting by zero (boundary IDs are not
-                        changed)
-
-  --rename              Rename "gmsh:physical" to "MaterialIDs"
-
+  -h, --help            show this help message and exit
+  --renumber            Renumber physical IDs of domains starting by zero (boundary IDs are ignored).
+  --ogs                 Rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32.
+  -a, --ascii           Save output files (*.vtu) in ascii format.
   -o OUTPUT, --output OUTPUT
-                        Base name of output files; if not given, then it defaults to basename of
-                        inputfile.
+                        Base name of output files; if not given, then it defaults to basename of inputfile.
+
+No cell data are written for boundaries (lines).
+
 
 **Example:**
 A geological model of a sediment basin by Christian Silbermann

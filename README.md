@@ -25,15 +25,15 @@ No cell data are written for boundaries (lines).
 **Example:**
 A geological model of a sediment basin by Christian Silbermann
 
-From the input file *geolayers_2d.msh* are generated:                        
-*geolayers_2d_boundary.vtu*,
-*geolayers_2d_domain.vtu*,                 
-*geolayers_2d_physical_group_RockBed.vtu*,
-*geolayers_2d_physical_group_SedimentLayer1.vtu*,
-*geolayers_2d_physical_group_SedimentLayer2.vtu*,
-*geolayers_2d_physical_group_Bottom.vtu*,  
-*geolayers_2d_physical_group_SedimentLayer3.vtu*,
-*geolayers_2d_physical_group_Left.vtu*,    
-*geolayers_2d_physical_group_Top.vtu*,
-*geolayers_2d_physical_group_Right.vtu*.
+From the input file *geolayers_2d.msh* are generated:    
+-*geolayers_2d_boundary.vtu*,
+-*geolayers_2d_domain.vtu*,                 
+-*geolayers_2d_physical_group_RockBed.vtu*,
+-*geolayers_2d_physical_group_SedimentLayer1.vtu*,
+-*geolayers_2d_physical_group_SedimentLayer2.vtu*,
+-*geolayers_2d_physical_group_Bottom.vtu*,  
+-*geolayers_2d_physical_group_SedimentLayer3.vtu*,
+-*geolayers_2d_physical_group_Left.vtu*,    
+-*geolayers_2d_physical_group_Top.vtu*,
+-*geolayers_2d_physical_group_Right.vtu*.
 

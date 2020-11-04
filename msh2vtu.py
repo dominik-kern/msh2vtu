@@ -70,10 +70,6 @@ else:
 
 # read in mesh
 mesh = meshio.read(args.filename)
-# points: 2Darray( point, xyz)
-# cells: list( cellblocks( type='line'/'triangle', data=2Darray(element, points) ))
-# cell_data: dict('gmsh:physical', 2Darray(geo_tag, ph_tag))
-# field_data: dict('top'/'bottom'/PH_NAME, 1Darray (ph_tag, geo_type)
 points, cells_dict = mesh.points, mesh.cells_dict
 cell_data_dict, field_data = mesh.cell_data_dict, mesh.field_data
 
@@ -89,11 +85,11 @@ ogs_string = "MaterialIDs"
 
 # if user wants to change 'gmsh:physical" to "MaterialIDs" or not
 if args.ogs:
-    # boundary_data_string=ogs_string # do not write MaterialID for boundaries
+    # do not write MaterialID for boundaries
     domain_data_string = ogs_string
     selection_data_string = ogs_string  # only used for domains
 else:
-    # boundary_data_string=gmsh_string
+    # do not write MaterialID for boundaries 
     domain_data_string = gmsh_string
     selection_data_string = gmsh_string  # only used for domains
 
@@ -145,9 +141,7 @@ if len(boundary_cells):  # only if there are data to write
 else:
     print("No boundary-cells found, no boundary-mesh written.")
 
-# Now we want to extract subdomains given by physical groups in gmsh,
-# so we need an additional loop.
-
+# Now we want to extract subdomains given by physical groups in gmsh
 # name=user-defined name of physical group, data=[physical_id, geometry_id]
 for name, data in field_data.items():
 
@@ -180,3 +174,4 @@ for name, data in field_data.items():
         meshio.write(outputfilename, submesh, binary=not args.ascii)
     else:
         print("No cells found for physical group " + name + ", no submesh written.")
+

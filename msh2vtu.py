@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-# Tested with
-# 	meshio 4.3.3 [Python 3.8.5]
-# 	gmsh 4.4.1
 # Author: Dominik Kern (TU Bergakademie Freiberg)
-# TODO extension to 3D, also option to save 2D as [x,y] without z=0
 
+# TODO extension to 3D, also option to save 2D as [x,y] without z=0
+# TODO args r,g
+# TODO try other formats 
 import meshio
 import os
 import numpy
@@ -12,6 +11,7 @@ import argparse
 import warnings
 
 tested_meshio_version = "4.3.3"
+tested_gmsh_version = "4.4.1"
 
 if meshio.__version__ < tested_meshio_version:
     warnings.warn(
@@ -23,7 +23,7 @@ elif meshio.__version__ > tested_meshio_version:
     )
 
 
-# auxiliary function needed for meshio version 4.0.16
+# 	auxiliary function needed for meshio version 4.0.16
 # def line_mesh_prune(points, input_cells):  # remove orphaned points
 #    # "old" means from the input mesh and "new" the mesh of connected points only
 #    original_shape = input_cells.shape  # for reconstrution after flatten
@@ -38,18 +38,17 @@ elif meshio.__version__ > tested_meshio_version:
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser(
     description="Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and saves them in vtu-format. Cell data are only written for domains but not for boundaries. Note that all mesh entities must belong to physical groups!",
-    epilog="Tested with Meshio 4.3.3 and Gmsh 4.4.1. Check for changes between versions, if there are errors!",
+    epilog="Tested with Meshio " + tested_meshio_version + " and Gmsh " + tested_gmsh_version + ". Check for changes between versions, if there are errors!",
 )
 parser.add_argument("filename", help="Gmsh mesh file (*.msh) as input data")
+parser.add_argument("--ogs",
+    action="store_true",
+    help='rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32'
+)
 parser.add_argument(
     "--renumber",
     action="store_true",
     help="renumber physical IDs of domains starting by zero (boundaries are ignored)",
-)
-parser.add_argument(
-    "--ogs",
-    action="store_true",
-    help='rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32',
 )
 parser.add_argument(
     "-a",
@@ -58,10 +57,22 @@ parser.add_argument(
     help="save output files (*.vtu) in ascii format",
 )
 parser.add_argument(
+    "-d",
+    "--dim",
+    default=0,
+    help="spatial dimension (2 or 3), trying automatic detection, if not given",
+)
+parser.add_argument(
     "-o",
     "--output",
     default="",
     help="base name of output files; if not given, then it defaults to basename of inputfile",
+)
+parser.add_argument(
+    "-z",
+    "--z-del",
+    action="store_true",
+    help="deleting z-coordinate, for 2D-meshes with z=0",
 )
 
 args = parser.parse_args()
@@ -86,8 +97,12 @@ else:
 
 # read in mesh
 mesh = meshio.read(args.filename)
-points, cells_dict = mesh.points, mesh.cells_dict
-cell_data_dict, field_data = mesh.cell_data_dict, mesh.field_data
+points, cells, cells_dict = mesh.points, mesh.cells, mesh.cells_dict
+cell_data, cell_data_dict, field_data = mesh.cell_data, mesh.cell_data_dict, mesh.field_data
+
+# write original mesh (only file conversion)
+#original_mesh=meshio.Mesh(points=points, cells=cells, cell_data=cell_data, field_data=field_data)
+meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
 
 
 # some variable declarations
@@ -123,7 +138,7 @@ if args.renumber:
         id_offset = min(id_list_domains)  # ..then find minimal physical id
 
 
-# extract domain mesh, note that meshio 4.3.3. offers mesh.remove_lower_dimensional(), but we want to keep a uniform style for domains and subdomain
+# Extract domain mesh, note that meshio 4.3.3. offers remove_lower_dimensional_cells(), but we want to keep a uniform style for domain and subdomains. Make sure to use domain_mesh=deepcopy(mesh) in this case!
 domain_cells = mesh.cells_dict[gmshdict[triangle_id]]
 domain_cell_data = mesh.cell_data_dict[gmsh_physical][gmshdict[triangle_id]]
 if args.ogs:

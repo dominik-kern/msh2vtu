@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# Tested with 
-#	meshio 4.3.3 [Python 3.8.5] 
-#	gmsh 4.4.1
+# Tested with
+# 	meshio 4.3.3 [Python 3.8.5]
+# 	gmsh 4.4.1
 # Author: Dominik Kern (TU Bergakademie Freiberg)
 # TODO extension to 3D, also option to save 2D as [x,y] without z=0
 
@@ -11,16 +11,20 @@ import numpy
 import argparse
 import warnings
 
-tested_meshio_version="4.3.3"
+tested_meshio_version = "4.3.3"
 
-if meshio.__version__<tested_meshio_version:
-    warnings.warn("Warning, out-dated Meshio version. In case of errors watch for commented code fragments from previous versions in this script (msh2vtu).")
-elif meshio.__version__>tested_meshio_version:
-    print("Newer version of Meshio than supported. Backward compatibility may be missing!")
+if meshio.__version__ < tested_meshio_version:
+    warnings.warn(
+        "Warning, out-dated Meshio version. In case of errors watch for commented code fragments from previous versions in this script (msh2vtu)."
+    )
+elif meshio.__version__ > tested_meshio_version:
+    print(
+        "Newer version of Meshio than supported. Backward compatibility may be missing!"
+    )
 
 
 # auxiliary function needed for meshio version 4.0.16
-#def line_mesh_prune(points, input_cells):  # remove orphaned points
+# def line_mesh_prune(points, input_cells):  # remove orphaned points
 #    # "old" means from the input mesh and "new" the mesh of connected points only
 #    original_shape = input_cells.shape  # for reconstrution after flatten
 #    old_points = input_cells.flatten()  # 1d-array needed
@@ -101,7 +105,7 @@ if args.ogs:
     domain_data_string = ogs_string
     selection_data_string = ogs_string  # only used for domains
 else:
-    # do not write MaterialID for boundaries 
+    # do not write MaterialID for boundaries
     domain_data_string = gmsh_physical
     selection_data_string = gmsh_physical  # only used for domains
 
@@ -133,8 +137,8 @@ if len(domain_cells) and len(domain_cells) == len(
         cells=[(gmshdict[triangle_id], domain_cells)],
         cell_data={domain_data_string: [domain_cell_data - id_offset]},
     )
-    #domain_mesh.prune()	# for meshio version 4.0.16
-    domain_mesh.remove_orphaned_nodes()	# to be on the safe side, indeed orphaned nodes are unlikely in the domain
+    # domain_mesh.prune()	# for meshio version 4.0.16
+    domain_mesh.remove_orphaned_nodes()  # to be on the safe side, indeed orphaned nodes are unlikely in the domain
     meshio.write(output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii)
 else:
     print("No or inconsistent domain-cells found, no domain-mesh written.")
@@ -168,23 +172,21 @@ for name, data in field_data.items():
         selected_cell_data = numpy.int32(selected_cell_data)
 
     if len(selected_cells):  # if there are some data
-        if data[geo_index] == line_id: 
+        if data[geo_index] == line_id:
 
             # workaround for meshio version 4.0.16
-            #new_points, new_cells = line_mesh_prune(points, selected_cells) 
-            #submesh = meshio.Mesh(points=new_points, cells=[(cell_type, new_cells)])	
+            # new_points, new_cells = line_mesh_prune(points, selected_cells)
+            # submesh = meshio.Mesh(points=new_points, cells=[(cell_type, new_cells)])
 
             submesh = meshio.Mesh(points=points, cells=[(cell_type, selected_cells)])
             submesh.remove_orphaned_nodes()
-        elif (
-            data[geo_index] == triangle_id
-        ):  
+        elif data[geo_index] == triangle_id:
             submesh = meshio.Mesh(
                 points=points,
                 cells=[(cell_type, selected_cells)],
                 cell_data={selection_data_string: [selected_cell_data - id_offset]},
             )
-	    # submesh.prune()	# for meshio_version 4.0.16
+            # submesh.prune()	# for meshio_version 4.0.16
             submesh.remove_orphaned_nodes()
         else:
             print("Unknown geometry id encountered, empty submesh.")
@@ -193,4 +195,3 @@ for name, data in field_data.items():
         meshio.write(outputfilename, submesh, binary=not args.ascii)
     else:
         print("No cells found for physical group " + name + ", no submesh written.")
-

@@ -1,7 +1,7 @@
 # msh2vtu
 
 This script depends on [meshio](https://github.com/nschloe/meshio).
-It was tested with meshio 4.3.3 [Python 3.8.5].
+It was tested with meshio 4.3.3 [Python 3.8.5] and gmsh 4.4.1.
 
 Note that msh2vtu is still restricted to 2D meshes!
 
@@ -31,8 +31,7 @@ Tested with Meshio 4.3.3 and Gmsh 4.4.1. Check for changes between versions, if 
 **Example:**
 A geological model of a sediment basin by Christian Silbermann
 
-From the input file *geolayers_2d.msh* (gmsh 4.4.1) are generated
-``python3 msh2vtu example/geolayers_2d.msh``:
+``python3 msh2vtu example/geolayers_2d.msh`` generates from the input file *geolayers_2d.msh* (gmsh 4.4.1):
 
 - *geolayers_2d_boundary.vtu*,
 - *geolayers_2d_domain.vtu*,                 
@@ -44,4 +43,3 @@ From the input file *geolayers_2d.msh* (gmsh 4.4.1) are generated
 - *geolayers_2d_physical_group_Left.vtu*,    
 - *geolayers_2d_physical_group_Top.vtu*,
 - *geolayers_2d_physical_group_Right.vtu*.
-

@@ -2,7 +2,7 @@
 # Author: Dominik Kern (TU Bergakademie Freiberg)
 
 # TODO extension to 3D, also option to save 2D as [x,y] without z=0
-# TODO args r,g
+# TODO args r=rennumberCELLDATA, g=ogs
 # TODO try other formats 
 import meshio
 import os

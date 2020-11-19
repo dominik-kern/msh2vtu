@@ -124,6 +124,7 @@ if os.path.isfile(args.filename):
     if file_extension != ".msh":
         warnings.warn("Warning, input file seems not to be in gmsh-format (*.msh)")
 else:
+    warnings.warn("No input file (mesh) found.")
     raise FileNotFoundError
 
 
@@ -159,8 +160,8 @@ gmshdict = {line_id: "line", triangle_id: "triangle"}  # gmsh convention
 gmsh_cell_physical = "gmsh:physical"
 gmsh_point = "gmsh:dim_tags"
 ogs_domain_cell = "MaterialIDs"
-ogs_boundary_point = "bulk_node_id"
-ogs_boundary_cell = "bulk_elem_id"
+ogs_boundary_point = "bulk_node_ids"
+ogs_boundary_cell = "bulk_elem_ids"
 number_of_original_points = len(points)
 domain_cell_type = gmshdict[triangle_id]
 boundary_cell_type = gmshdict[line_id]
@@ -218,9 +219,11 @@ if args.ogs:
     node_connectivity = cells_at_nodes(domain_cells_array, number_of_original_points)
     domain_mesh_node_numbers = numpy.arange(number_of_original_points)
     boundary_point_data_string = ogs_boundary_point
-    boundary_point_data_array = domain_mesh_node_numbers
+    boundary_point_data_array = numpy.uint64(domain_mesh_node_numbers)
     boundary_cell_data_string = ogs_boundary_cell
-    boundary_cell_data_array = domain_cells(boundary_cells_array, node_connectivity)
+    boundary_cell_data_array = numpy.uint64(
+        domain_cells(boundary_cells_array, node_connectivity)
+    )
 else:
     boundary_point_data_string = gmsh_point
     boundary_point_data_array = point_data[gmsh_point]
@@ -257,12 +260,12 @@ for name, data in field_data.items():
         if data[geo_index] == line_id:  # boundary
             if args.ogs:
                 selection_point_data_string = ogs_boundary_point
-                selection_point_data_array = (
+                selection_point_data_array = numpy.uint64(
                     domain_mesh_node_numbers  # all points, will be trimmed later
                 )
                 selection_cell_data_string = ogs_boundary_cell
-                selection_cell_data_array = domain_cells(
-                    selection_cells_array, node_connectivity
+                selection_cell_data_array = numpy.uint64(
+                    domain_cells(selection_cells_array, node_connectivity)
                 )
             else:
                 selection_point_data_string = gmsh_point

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # Author: Dominik Kern (TU Bergakademie Freiberg)
-import meshio
+import meshio # https://github.com/nschloe/meshio
 import os
+import sys
 import numpy
 import argparse
 import warnings
@@ -69,12 +70,12 @@ def domain_cells(cells_array, node_connectivity):
 # parsing command line arguments
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser(
-    description="Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-meshes and saves them in vtu-format. Cell data are only written for domains but not for boundaries. Note that all mesh entities must belong to physical groups!",
+    description="Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-submeshes and saves them in vtu-format. Note that all mesh entities must belong to physical groups.",
     epilog="Tested with Meshio "
     + tested_meshio_version
     + " and Gmsh "
     + tested_gmsh_version
-    + ". Check for changes between versions, if there are errors!",
+    + ". Check for changes between versions, if there are errors.",
 )
 parser.add_argument("filename", help="Gmsh mesh file (*.msh) as input data")
 parser.add_argument(
@@ -87,7 +88,7 @@ parser.add_argument(
     "-r",
     "--rdcd",
     action="store_true",
-    help="renumber physical IDs (cell data)  of domains starting by zero (boundaries are ignored)",
+    help="renumber domain cell data, physical IDs (cell data) of domains get numbered beginning with zero",
 )
 parser.add_argument(
     "-a",
@@ -181,70 +182,79 @@ if args.rdcd:  # prepare renumber-domain-cell-data (rdcd)
 
 
 # Extract domain mesh, note that meshio 4.3.3. offers remove_lower_dimensional_cells(), but we want to keep a uniform style for domain and subdomains. Make sure to use domain_mesh=deepcopy(mesh) in this case!
-domain_cells_array = cells_dict[domain_cell_type]
-domain_cell_data_array = cell_data_dict[gmsh_cell_physical][domain_cell_type]
-if args.ogs:
-    domain_cell_data_string = ogs_domain_cell
-    domain_cell_data_array = numpy.int32(
-        domain_cell_data_array
-    )  # ogs needs MaterialIDs as int32
-else:
-    domain_cell_data_string = gmsh_cell_physical
+if gmsh_cell_physical not in cell_data_dict:
+    warnings.warn("Warning, no physical groups found.")
+    sys.exit()
 
-if len(domain_cells_array) and len(domain_cells_array) == len(
-    domain_cell_data_array
-):  # only if there are (consistent) data to write
-    domain_mesh = meshio.Mesh(
-        points=points,
-        cells=[(domain_cell_type, domain_cells_array)],
-        cell_data={domain_cell_data_string: [domain_cell_data_array - id_offset]},
-    )
-    # domain_mesh.prune()	# for older meshio version (4.0.16)
-    domain_mesh.remove_orphaned_nodes()
-    if len(domain_mesh.points) == number_of_original_points:
-        meshio.write(
-            output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii
-        )
+if domain_cell_type in cells_dict:
+    domain_cells_array = cells_dict[domain_cell_type]
+    domain_cell_data_array = cell_data_dict[gmsh_cell_physical][domain_cell_type]
+    if args.ogs:
+        domain_cell_data_string = ogs_domain_cell
+        domain_cell_data_array = numpy.int32(
+            domain_cell_data_array
+        )  # ogs needs MaterialIDs as int32
     else:
-        print(
-            "There are nodes outside domain, this may lead to ambiguities, no domain-mesh written."
+        domain_cell_data_string = gmsh_cell_physical
+    
+    if len(domain_cells_array) and len(domain_cells_array) == len(
+        domain_cell_data_array
+    ):  # only if there are (consistent) data to write
+        domain_mesh = meshio.Mesh(
+            points=points,
+            cells=[(domain_cell_type, domain_cells_array)],
+            cell_data={domain_cell_data_string: [domain_cell_data_array - id_offset]},
         )
+        # domain_mesh.prune()	# for older meshio version (4.0.16)
+        domain_mesh.remove_orphaned_nodes()
+        if len(domain_mesh.points) == number_of_original_points:
+            meshio.write(
+                output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii
+            )
+        else:
+            print(
+                "There are nodes outside domain, this may lead to ambiguities, no domain-mesh written."
+            )
+    else:
+        print("Inconsistent domain-cells, no domain-mesh written.")
 else:
-    print("No or inconsistent domain-cells found, no domain-mesh written.")
-
+    print("No domain-cells found")
 
 # Extract boundary mesh
-boundary_cells_array = cells_dict[boundary_cell_type]
-if args.ogs:
-    node_connectivity = cells_at_nodes(domain_cells_array, number_of_original_points)
-    domain_mesh_node_numbers = numpy.arange(number_of_original_points)
-    boundary_point_data_string = ogs_boundary_point
-    boundary_point_data_array = numpy.uint64(domain_mesh_node_numbers)
-    boundary_cell_data_string = ogs_boundary_cell
-    boundary_cell_data_array = numpy.uint64(
-        domain_cells(boundary_cells_array, node_connectivity)
-    )
+if boundary_cell_type in cells_dict:
+    boundary_cells_array = cells_dict[boundary_cell_type]
+    if args.ogs:
+        node_connectivity = cells_at_nodes(domain_cells_array, number_of_original_points)
+        domain_mesh_node_numbers = numpy.arange(number_of_original_points)
+        boundary_point_data_string = ogs_boundary_point
+        boundary_point_data_array = numpy.uint64(domain_mesh_node_numbers)
+        boundary_cell_data_string = ogs_boundary_cell
+        boundary_cell_data_array = numpy.uint64(
+            domain_cells(boundary_cells_array, node_connectivity)
+        )
+    else:
+        boundary_point_data_string = gmsh_point
+        boundary_point_data_array = point_data[gmsh_point]
+        boundary_cell_data_string = gmsh_cell_physical
+        boundary_cell_data_array = cell_data_dict[gmsh_cell_physical][boundary_cell_type]
+    
+    if len(boundary_cells_array) and len(boundary_cells_array) == len(
+        boundary_cell_data_array
+    ):
+        boundary_mesh = meshio.Mesh(
+            points=points,
+            point_data={boundary_point_data_string: boundary_point_data_array},
+            cells=[(boundary_cell_type, boundary_cells_array)],
+            cell_data={boundary_cell_data_string: [boundary_cell_data_array]},
+        )
+        boundary_mesh.remove_orphaned_nodes()
+        meshio.write(
+            output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii
+        )
+    else:
+        print("Inconsistent boundary-cells, no boundary-mesh written.")
 else:
-    boundary_point_data_string = gmsh_point
-    boundary_point_data_array = point_data[gmsh_point]
-    boundary_cell_data_string = gmsh_cell_physical
-    boundary_cell_data_array = cell_data_dict[gmsh_cell_physical][boundary_cell_type]
-
-if len(boundary_cells_array) and len(boundary_cells_array) == len(
-    boundary_cell_data_array
-):
-    boundary_mesh = meshio.Mesh(
-        points=points,
-        point_data={boundary_point_data_string: boundary_point_data_array},
-        cells=[(boundary_cell_type, boundary_cells_array)],
-        cell_data={boundary_cell_data_string: [boundary_cell_data_array]},
-    )
-    boundary_mesh.remove_orphaned_nodes()
-    meshio.write(
-        output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii
-    )
-else:
-    print("No or inconsistent boundary-cells found, no boundary-mesh written.")
+    print("No boundary-cells found")
 
 
 # Now we want to extract subdomains given by physical groups in gmsh
@@ -303,7 +313,7 @@ for name, data in field_data.items():
             )  # point_data not needed
             # submesh.prune()	# for meshio_version 4.0.16
             submesh.remove_orphaned_nodes()
-        else:
+        else:# TODO handle vertex
             print("Unknown geometry id encountered, empty submesh.")
             submesh = meshio.Mesh(points=[], cells=[])
         outputfilename = output_basename + "_physical_group_" + name + ".vtu"

@@ -1,6 +1,6 @@
 Extension to 3D
 Option to save 2D as [x,y], i.e. without z=0
-Possibly other FE (quad, hex), at  least give a warning
+Possibly other FE (quad, hex) and higher order (gmsh, msh2vtu_original, createQuadraticMesh, msh2vtu_extract); at  least give a warning
 Try other file formats (xdmf, ...)
 Transfer all cell data from gmsh, if --ogs option is not set, at least document/warn
 

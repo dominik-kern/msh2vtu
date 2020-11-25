@@ -155,17 +155,20 @@ meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
 # some variable declarations
 ph_index = 0  # to access physical id in field data
 geo_index = 1  # to access geometrical id in field data
+vertex_id = 0 # geometry type
 line_id = 1  # geometry type
 triangle_id = 2  # geometry type
-gmshdict = {line_id: "line", triangle_id: "triangle"}  # gmsh convention
+gmshdict = {vertex_id: "vertex", line_id: "line", triangle_id: "triangle"}  # gmsh convention
 gmsh_cell_physical = "gmsh:physical"
 gmsh_point = "gmsh:dim_tags"
 ogs_domain_cell = "MaterialIDs"
 ogs_boundary_point = "bulk_node_ids"
 ogs_boundary_cell = "bulk_elem_ids"
+ogs_vertex_cell = "ogs:physical" # placeholder not, not required from ogs
 number_of_original_points = len(points)
 domain_cell_type = gmshdict[triangle_id]
 boundary_cell_type = gmshdict[line_id]
+vertex_cell_type = gmshdict[vertex_id]
 
 # if user wants physical group numbering of domains beginning with zero
 id_offset = 0  # initial value, zero will not change anything
@@ -175,7 +178,7 @@ if args.rdcd:  # prepare renumber-domain-cell-data (rdcd)
     for dataset in field_data.values():  # go through all physical groups
         if (
             dataset[geo_index] == triangle_id
-        ):  # only for domains (triangles), ignore boundaries (lines)
+        ):  # only for domains (triangles), ignore boundaries (lines) and vertices (points)
             id_list_domains.append(dataset[ph_index])  # append physical id
     if len(id_list_domains):  # if there are some domains..
         id_offset = min(id_list_domains)  # ..then find minimal physical id
@@ -260,10 +263,10 @@ else:
 # Now we want to extract subdomains given by physical groups in gmsh
 # name=user-defined name of physical group, data=[physical_id, geometry_id]
 for name, data in field_data.items():
-
+    print(name)
     ph_id = data[ph_index]  # selection by physical id (user defined)
-    geo_id = data[geo_index]  # 1 or 2 ..
-    cell_type = gmshdict[geo_id]  # .. 'line' or 'triangle'
+    geo_id = data[geo_index]  # 0 or 1 or 2 
+    cell_type = gmshdict[geo_id]  # 'vertex' or 'line' or 'triangle'
     selection_index = cell_data_dict[gmsh_cell_physical][cell_type] == ph_id
     selection_cells_array = cells_dict[cell_type][selection_index]
     if len(selection_cells_array):  # if there are some data
@@ -286,10 +289,11 @@ for name, data in field_data.items():
                 selection_cell_data_array = cell_data_dict[gmsh_cell_physical][
                     cell_type
                 ][selection_index]
+
             submesh = meshio.Mesh(
                 points=points,
                 point_data={selection_point_data_string: selection_point_data_array},
-                cells=[(boundary_cell_type, selection_cells_array)],
+                cells=[(cell_type, selection_cells_array)],
                 cell_data={selection_cell_data_string: [selection_cell_data_array]},
             )
             submesh.remove_orphaned_nodes()  # trim mesh
@@ -306,17 +310,34 @@ for name, data in field_data.items():
                 selection_cell_data_array = numpy.int32(selection_cell_data_array)
             else:
                 selection_cell_data_string = gmsh_cell_physical
+            
             submesh = meshio.Mesh(
                 points=points,
-                cells=[(domain_cell_type, selection_cells_array)],
+                cells=[(cell_type, selection_cells_array)],
                 cell_data={selection_cell_data_string: [selection_cell_data_array]},
             )  # point_data not needed
             # submesh.prune()	# for meshio_version 4.0.16
             submesh.remove_orphaned_nodes()
-        else:# TODO handle vertex
+        elif data[geo_index] == vertex_id:	# points
+            selection_cell_data_array = ( cell_data_dict[gmsh_cell_physical][cell_type][selection_index]) 
+            if args.ogs:
+                selection_cell_data_string = ogs_vertex_cell  
+                selection_cell_data_array = numpy.int32(selection_cell_data_array)
+            else:
+                selection_cell_data_string = gmsh_cell_physical
+            
+            submesh = meshio.Mesh(
+                points=points,
+                cells=[(cell_type, selection_cells_array)],
+                cell_data={selection_cell_data_string: [selection_cell_data_array]},
+            )  # point_data not needed
+            # submesh.prune()   # for meshio_version 4.0.16
+            submesh.remove_orphaned_nodes()
+        else:
             print("Unknown geometry id encountered, empty submesh.")
             submesh = meshio.Mesh(points=[], cells=[])
         outputfilename = output_basename + "_physical_group_" + name + ".vtu"
         meshio.write(outputfilename, submesh, binary=not args.ascii)
     else:
         print("No cells found for physical group " + name + ", no submesh written.")
+

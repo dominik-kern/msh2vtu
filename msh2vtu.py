@@ -7,7 +7,7 @@ import numpy
 import argparse
 import warnings
 
-tested_meshio_version = "4.3.3"
+tested_meshio_version = "4.3.5"
 tested_gmsh_version = "4.4.1"
 
 if meshio.__version__ < tested_meshio_version:

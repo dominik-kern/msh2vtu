@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Author: Dominik Kern (TU Bergakademie Freiberg)
-import meshio # https://github.com/nschloe/meshio
+import meshio  # https://github.com/nschloe/meshio
 import os
 import sys
 import numpy
@@ -32,6 +32,21 @@ elif meshio.__version__ > tested_meshio_version:
 
 
 # function to create node connectivity list
+
+
+def print_info(mesh):
+    N, D = mesh.points.shape
+    print(str(N) + " points in " + str(D) + " dimensions")
+    cell_info = "cells: "
+    for cell_type, cell_array in mesh.cells_dict.items():
+        cell_info += str(len(cell_array)) + " " + cell_type + ", "
+    print(cell_info[0:-2])
+    print("point_data=" + str(list(mesh.point_data)))
+    print("cell_data=" + str(list(mesh.cell_data)))
+    print("cell_sets=" + str(list(mesh.cell_sets)))
+    print("--")
+
+
 def cells_at_nodes(cells, node_count):
     empty_list = []
     node_connectivity = [
@@ -146,7 +161,8 @@ cells, cells_dict, cell_data, cell_data_dict = (
     mesh.cell_data_dict,
 )
 field_data = mesh.field_data
-
+print("Original mesh (read)")
+print_info(mesh)
 # write original mesh (only file conversion)
 # original_mesh=meshio.Mesh(points=points, cells=cells, cell_data=cell_data, field_data=field_data)
 meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
@@ -155,16 +171,20 @@ meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
 # some variable declarations
 ph_index = 0  # to access physical id in field data
 geo_index = 1  # to access geometrical id in field data
-vertex_id = 0 # geometry type
+vertex_id = 0  # geometry type
 line_id = 1  # geometry type
 triangle_id = 2  # geometry type
-gmshdict = {vertex_id: "vertex", line_id: "line", triangle_id: "triangle"}  # gmsh convention
+gmshdict = {
+    vertex_id: "vertex",
+    line_id: "line",
+    triangle_id: "triangle",
+}  # gmsh convention
 gmsh_cell_physical = "gmsh:physical"
 gmsh_point = "gmsh:dim_tags"
 ogs_domain_cell = "MaterialIDs"
 ogs_boundary_point = "bulk_node_ids"
 ogs_boundary_cell = "bulk_elem_ids"
-ogs_vertex_cell = "ogs:physical" # placeholder not, not required from ogs
+ogs_vertex_cell = "ogs:physical"  # placeholder not, not required from ogs
 number_of_original_points = len(points)
 domain_cell_type = gmshdict[triangle_id]
 boundary_cell_type = gmshdict[line_id]
@@ -199,7 +219,7 @@ if domain_cell_type in cells_dict:
         )  # ogs needs MaterialIDs as int32
     else:
         domain_cell_data_string = gmsh_cell_physical
-    
+
     if len(domain_cells_array) and len(domain_cells_array) == len(
         domain_cell_data_array
     ):  # only if there are (consistent) data to write
@@ -214,6 +234,8 @@ if domain_cell_type in cells_dict:
             meshio.write(
                 output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii
             )
+            print("Domain mesh (written)")
+            print_info(domain_mesh)
         else:
             print(
                 "There are nodes outside domain, this may lead to ambiguities, no domain-mesh written."
@@ -227,7 +249,9 @@ else:
 if boundary_cell_type in cells_dict:
     boundary_cells_array = cells_dict[boundary_cell_type]
     if args.ogs:
-        node_connectivity = cells_at_nodes(domain_cells_array, number_of_original_points)
+        node_connectivity = cells_at_nodes(
+            domain_cells_array, number_of_original_points
+        )
         domain_mesh_node_numbers = numpy.arange(number_of_original_points)
         boundary_point_data_string = ogs_boundary_point
         boundary_point_data_array = numpy.uint64(domain_mesh_node_numbers)
@@ -239,8 +263,10 @@ if boundary_cell_type in cells_dict:
         boundary_point_data_string = gmsh_point
         boundary_point_data_array = point_data[gmsh_point]
         boundary_cell_data_string = gmsh_cell_physical
-        boundary_cell_data_array = cell_data_dict[gmsh_cell_physical][boundary_cell_type]
-    
+        boundary_cell_data_array = cell_data_dict[gmsh_cell_physical][
+            boundary_cell_type
+        ]
+
     if len(boundary_cells_array) and len(boundary_cells_array) == len(
         boundary_cell_data_array
     ):
@@ -254,6 +280,9 @@ if boundary_cell_type in cells_dict:
         meshio.write(
             output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii
         )
+        print("Boundary mesh (written)")
+        print_info(boundary_mesh)
+
     else:
         print("Inconsistent boundary-cells, no boundary-mesh written.")
 else:
@@ -263,9 +292,8 @@ else:
 # Now we want to extract subdomains given by physical groups in gmsh
 # name=user-defined name of physical group, data=[physical_id, geometry_id]
 for name, data in field_data.items():
-    print(name)
     ph_id = data[ph_index]  # selection by physical id (user defined)
-    geo_id = data[geo_index]  # 0 or 1 or 2 
+    geo_id = data[geo_index]  # 0 or 1 or 2
     cell_type = gmshdict[geo_id]  # 'vertex' or 'line' or 'triangle'
     selection_index = cell_data_dict[gmsh_cell_physical][cell_type] == ph_id
     selection_cells_array = cells_dict[cell_type][selection_index]
@@ -310,7 +338,7 @@ for name, data in field_data.items():
                 selection_cell_data_array = numpy.int32(selection_cell_data_array)
             else:
                 selection_cell_data_string = gmsh_cell_physical
-            
+
             submesh = meshio.Mesh(
                 points=points,
                 cells=[(cell_type, selection_cells_array)],
@@ -318,14 +346,16 @@ for name, data in field_data.items():
             )  # point_data not needed
             # submesh.prune()	# for meshio_version 4.0.16
             submesh.remove_orphaned_nodes()
-        elif data[geo_index] == vertex_id:	# points
-            selection_cell_data_array = ( cell_data_dict[gmsh_cell_physical][cell_type][selection_index]) 
+        elif data[geo_index] == vertex_id:  # points
+            selection_cell_data_array = cell_data_dict[gmsh_cell_physical][cell_type][
+                selection_index
+            ]
             if args.ogs:
-                selection_cell_data_string = ogs_vertex_cell  
+                selection_cell_data_string = ogs_vertex_cell
                 selection_cell_data_array = numpy.int32(selection_cell_data_array)
             else:
                 selection_cell_data_string = gmsh_cell_physical
-            
+
             submesh = meshio.Mesh(
                 points=points,
                 cells=[(cell_type, selection_cells_array)],
@@ -338,6 +368,8 @@ for name, data in field_data.items():
             submesh = meshio.Mesh(points=[], cells=[])
         outputfilename = output_basename + "_physical_group_" + name + ".vtu"
         meshio.write(outputfilename, submesh, binary=not args.ascii)
+        print("Submesh " + name + " (written)")
+        print_info(submesh)
+
     else:
         print("No cells found for physical group " + name + ", no submesh written.")
-

@@ -169,15 +169,17 @@ meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
 
 
 # some variable declarations
-ph_index = 0  # to access physical id in field data
-geo_index = 1  # to access geometrical id in field data
-vertex_id = 0  # geometry type
-line_id = 1  # geometry type
-triangle_id = 2  # geometry type
+ph_index = 0	# to access physical group id in field data
+geo_index = 1	# to access geometrical dimension in field data
+vertex_id = 0	# dimension
+line_id = 1	# dimension
+triangle_id = 2	# dimension
+tetra_id = 3 	# dimension
 gmshdict = {
     vertex_id: "vertex",
     line_id: "line",
     triangle_id: "triangle",
+    tetra_id: "tetra"
 }  # gmsh convention
 gmsh_cell_physical = "gmsh:physical"
 gmsh_point = "gmsh:dim_tags"

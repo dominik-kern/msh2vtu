@@ -1,7 +1,7 @@
 # msh2vtu
 
 This script depends on [meshio](https://github.com/nschloe/meshio).
-It was tested with meshio 4.3.3 [Python 3.8.5] and gmsh 4.4.1.
+It was tested with meshio 4.3.5 [Python 3.8.5] and gmsh 4.4.1.
 
 Note that msh2vtu is still restricted to 2D meshes!
 

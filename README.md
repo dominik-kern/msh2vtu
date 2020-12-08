@@ -27,8 +27,8 @@ optional arguments:
 Tested with Meshio 4.3.6 and Gmsh 4.4.1. Check for changes between versions, if there are errors.
 ```
 
-**Example:**
-A geological model of a sediment basin by Christian Silbermann
+**Examples:**
+A geological model (2D) of a sediment basin by Christian Silbermann and an terrain model (3D) from the official Gmsh tutorials (x2).
 
 ``python3 msh2vtu example/geolayers_2d.msh`` generates from the input file *geolayers_2d.msh* (gmsh 4.4.1):
 

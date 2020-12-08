@@ -3,4 +3,5 @@ example/*.vtu
 intro.ipy
 forum_example/*
 result2bc/*
+tests/*
 

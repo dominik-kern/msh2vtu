@@ -1,9 +1,9 @@
 # msh2vtu
 
 This script depends on [meshio](https://github.com/nschloe/meshio).
-It was tested with meshio 4.3.5 [Python 3.8.5] and gmsh 4.4.1.
+It was tested with meshio 4.3.6 [Python 3.8.5] and gmsh 4.4.1.
 
-Note that msh2vtu is still restricted to 2D meshes!
+Note that msh2vtu is still restricted to linear simplex meshes (3-point triangle in 2D, 4-point tetraeder in 3D)!
 
 **Usage:**
 ```

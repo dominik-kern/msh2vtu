@@ -200,8 +200,10 @@ if args.dim==0:
         dim=3
     elif gmshdict[triangle_id] in element_types:
         dim=2
+    elif gmshdict[line_id] in element_types:
+        dim=1
     else:
-        warnings.warn("Neither 3D nor 2D elements found.")
+        warnings.warn("Neither 3D nor lower dimensional elements (2D, 1D) found.")
         dim=0
     print('Detected mesh dimension: ' + str(dim))
 else:
@@ -223,7 +225,12 @@ for element_type in mesh.cells_dict.keys():
         warnings.warn('Unsupported element type found')
 
 # boundary and domain cell types depend on dimension
-if dim==2:
+if dim==1:
+    boundary_id=vertex_id
+    domain_id=line_id
+    boundary_cell_type=gmshdict[vertex_id]
+    domain_cell_type=gmshdict[line_id]
+elif dim==2:
     boundary_id=line_id	# dimension
     domain_id=triangle_id	# dimension
     boundary_cell_type=gmshdict[line_id]

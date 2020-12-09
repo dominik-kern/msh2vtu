@@ -1,4 +1,4 @@
-example/*.vtu
+examples/*.vtu
 .*.swp
 intro.ipy
 forum_example/*

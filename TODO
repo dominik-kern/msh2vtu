@@ -1,4 +1,5 @@
-enable quad
-enable 1D
-Possibly other FE (quad, hex, ...) and higher order (gmsh, msh2vtu_original, createQuadraticMesh, msh2vtu_extract); 
+Generalize connected_domain_cells() for hexaeders, intersection of NODES_PER_BOUNDARY_ELEMENT
+verify if  nodenumbering of mixed domains (e.g. tri and quad) matches node_connectivity
+Add automatic tests
+Enable higher order elements (gmsh, msh2vtu_original, createQuadraticMesh, msh2vtu_extract); 
 Try other file formats (xdmf, ...)

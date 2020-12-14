@@ -3,7 +3,7 @@
 This script depends on [meshio](https://github.com/nschloe/meshio).
 It was tested with meshio 4.3.6 [Python 3.8.5] and gmsh 4.4.1.
 
-Note that msh2vtu is still restricted to linear simplex meshes (3-point triangle in 2D, 4-point tetraeder in 3D)!
+Note that msh2vtu is still restricted to linear meshes, such as 3-point triangles or 4-point quadrilaterals!
 
 **Usage:**
 ```
@@ -28,7 +28,7 @@ Tested with Meshio 4.3.6 and Gmsh 4.4.1. Check for changes between versions, if 
 ```
 
 **Examples:**
-A geological model (2D) of a sediment basin by Christian Silbermann and an terrain model (3D) from the official Gmsh tutorials (x2).
+A geological model (2D) of a sediment basin by Christian Silbermann and a terrain model (3D) from the official Gmsh tutorials (x2).
 
 ``python3 msh2vtu example/geolayers_2d.msh`` generates from the input file *geolayers_2d.msh* (gmsh 4.4.1):
 

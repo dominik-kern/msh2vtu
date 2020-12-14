@@ -1,6 +1,6 @@
 Verify domain cell numbering of mixed domains (e.g. tri and quad), i.e. cell numbering in node connectivity matches with vtu-file (and thus OGS), ideally implement OOP style (node_connectivity class) 
 
-Add automatic tests
+Add automatic tests, e.g. 2D tri, quad and 3D tetra, with and without --ogs option
 
 Enable higher order elements (replace current workflow: gmsh, msh2vtu_original, createQuadraticMesh, msh2vtu_extract); 
 

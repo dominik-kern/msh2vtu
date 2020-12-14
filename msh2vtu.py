@@ -9,7 +9,7 @@ import argparse
 import warnings
 
 
-# 	auxiliary function needed for meshio version 4.0.16
+# 	obsolete auxiliary function needed for meshio version 4.0.16
 # def line_mesh_prune(points, input_cells):  # remove orphaned points
 #    # "old" means from the input mesh and "new" the mesh of connected points only
 #    original_shape = input_cells.shape  # for reconstrution after flatten
@@ -36,48 +36,28 @@ def print_info(mesh):
 
 # function to create node connectivity list, i.e. store for each node to which domain elements it belongs
 def cells_at_nodes(cells, node_count, cell_start_index):	# depending on the numbering of mixed meshes in OGS one may think of an object-oriented way to add elements (of different type) to node connectivity
-    empty_list = []
-    node_connectivity = [ empty_list[:] for _ in range(node_count) ]  # initialize list of lists
+    node_connectivity = [ set() for _ in range(node_count) ]  # initialize list of sets
     cell_index = cell_start_index
     for cell in cells:
         for node in cell:
-            node_connectivity[node].append(cell_index)
+            node_connectivity[node].add(cell_index)
         cell_index += 1
     return node_connectivity
 
 
-# function to find out to which domain elements a boundary element belongs, TODO generalize to intersection of  POINTS_PER_BOUNDARY_CELL
-def connected_domain_cells(cells_values, node_connectivity, dim):
-    boundary_cell_data_list = []
-    for cell in cells_values:
-        node1 = cell[0]
-        node2 = cell[1]
-        if dim==2:
-            common_domain_cell = [
-                a_cell
-                for a_cell in node_connectivity[node1]
-                if a_cell in node_connectivity[node2]
-            ]  # find intersection of 2 lists
-        elif dim==3:
-            node3 = cell[2]        
-            common_domain_cell = [
-                a_cell
-                for a_cell in node_connectivity[node1]
-                if (a_cell in node_connectivity[node2]) and (a_cell in node_connectivity[node3])
-            ] 	# find intersection of 3 lists
+# function to find out to which domain elements a boundary element belongs 
+def connected_domain_cells(boundary_cells_values, node_connectivity):
+    domain_cells_array=numpy.zeros(len(boundary_cells_values)) 	# to return common connected domain cell to be stored as cell_data ("bulk_element_id")
+    for cell_index, cell_values in enumerate(boundary_cells_values): 	# cell lists node of which it is comprised
+        connected_domain_cells=[]
+        for node in cell_values:
+            connected_domain_cells.append(node_connectivity[node])
+        common_domain_cells=set.intersection(*connected_domain_cells) 
+        if len(common_domain_cells) == 1:	# in a healthy mesh there should be exactly on domain cell per boundary cell
+            domain_cells_array[cell_index]=common_domain_cells.pop()
         else:
-            warnings.warn("domain_cells: invalid dimension")
- 
-        if len(common_domain_cell) == 1:
-            boundary_cell_data_list.append(
-                common_domain_cell
-            )  # to be stored as cell data
-        else:
-            warnings.warn(
-                "domain cells: boundary cell does not or not uniquely belong to a domain cell"
-            )
-
-    return numpy.array(boundary_cell_data_list)
+            warnings.warn( "domain cells: boundary cell " + str(cell_index)  + " does not or not uniquely belong to a domain cell")
+    return domain_cells_array
 
 
 # some variable declarations
@@ -132,7 +112,7 @@ parser.add_argument(
 parser.add_argument(
     "-a",
     "--ascii",
-    action="store_true",	# TODO
+    action="store_true",	
     help="save output files (*.vtu) in ascii format",
 )
 parser.add_argument(
@@ -295,15 +275,14 @@ if len(domain_mesh.points) == number_of_original_points:
     # node connectivity for a mixed mesh (double check element numbering!)
     if args.ogs:
         cell_start_index=0
-        empty_list = []
-        node_connectivity = [ empty_list[:] for _ in range(number_of_original_points) ]  # initialize list of lists
+        node_connectivity = [ set() for _ in range(number_of_original_points) ]  # initialize list of sets
         # make a list for each type of domain cells
         for cell_block in domain_cells:
             block_node_connectivity = cells_at_nodes(cell_block[1], number_of_original_points, cell_start_index)  # later used for boundary mesh and submeshes
             cell_start_index+=len(cell_block[1]) # assume consective cell numbering (as it is written to vtu)
-            # add connectivities of current cell type to entries (lists) of total connectivity (list of lists)
+            # add connectivities of current cell type to entries (sets) of total connectivity (list of sets)
             for total_list, block_list in zip(node_connectivity, block_node_connectivity):
-                total_list.extend(block_list)
+                total_list.update(block_list)
 else:
     warnings.warn( "There are nodes outside domain, this may lead to ambiguities, no domain-mesh written.")# 
     if args.ogs:
@@ -345,7 +324,7 @@ for boundary_cell_type in boundary_cell_types:
 
     if args.ogs:
         boundary_cell_data_key = ogs_boundary_cell_data_key
-        boundary_cell_data_values = numpy.uint64( connected_domain_cells(boundary_cells_values, node_connectivity, dim) )
+        boundary_cell_data_values = numpy.uint64( connected_domain_cells(boundary_cells_values, node_connectivity) )
         boundary_cell_data[boundary_cell_data_key]=[boundary_cell_data_values]
     else:
         if boundary_in_physical_group:
@@ -393,7 +372,7 @@ for name, data in field_data.items():
                     selection_point_data_key = ogs_boundary_point_data_key
                     selection_point_data_values = numpy.uint64(domain_mesh_node_numbers)  # all points, will be trimmed later
                     selection_cell_data_key = ogs_boundary_cell_data_key
-                    selection_cell_data_values = numpy.uint64(connected_domain_cells(selection_cells_values, node_connectivity, dim))
+                    selection_cell_data_values = numpy.uint64(connected_domain_cells(selection_cells_values, node_connectivity))
                 else:
                     selection_point_data_key = gmsh_point_data_key
                     selection_point_data_values = point_data[gmsh_point_data_key]  # all points, will be trimmed later

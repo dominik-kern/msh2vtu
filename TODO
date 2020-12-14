@@ -1,5 +1,7 @@
-Generalize connected_domain_cells() for hexaeders and further by general intersection of NODES_PER_BOUNDARY_ELEMENT
-Verify domain cell numbering of mixed domains (e.g. tri and quad), i.e. cell numbering in node connectivity matches with vtu-file (and thus OGS) 
+Verify domain cell numbering of mixed domains (e.g. tri and quad), i.e. cell numbering in node connectivity matches with vtu-file (and thus OGS), ideally implement OOP style (node_connectivity class) 
+
 Add automatic tests
+
 Enable higher order elements (replace current workflow: gmsh, msh2vtu_original, createQuadraticMesh, msh2vtu_extract); 
+
 Try other file formats (xdmf, ...)

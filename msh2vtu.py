@@ -195,7 +195,7 @@ else:
     dim=args.dim	# trust the user
 
 # delete third dimension if wanted  
-if args.delz and dim==2:
+if args.delz and dim==dim2:
 	mesh.prune_z_0()
 
 # boundary and domain cell types depend on dimension
@@ -266,6 +266,7 @@ for domain_cell_type in domain_cell_types:
 domain_mesh = meshio.Mesh( points=points, cells=domain_cells, cell_data=domain_cell_data)
 # domain_mesh.prune()	# for older meshio version (4.0.16)
 domain_mesh.remove_orphaned_nodes()
+
 
 if len(domain_mesh.points) == number_of_original_points: 
     meshio.write( output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii )

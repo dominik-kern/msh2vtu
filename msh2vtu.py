@@ -56,7 +56,7 @@ def connected_domain_cells(boundary_cells_values, node_connectivity):
         if len(common_domain_cells) == 1:	# in a healthy mesh there should be exactly on domain cell per boundary cell
             domain_cells_array[cell_index]=common_domain_cells.pop()
         else:
-            warnings.warn( "domain cells: boundary cell " + str(cell_index)  + " does not or not uniquely belong to a domain cell")
+            warnings.warn( "connected domain cells: boundary cell " + str(cell_index)  + " does not or not uniquely belong to a domain cell. A possible reason might be cells of boundary dimension inside the domain.")
     return domain_cells_array
 
 

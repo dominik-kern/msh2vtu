@@ -47,17 +47,21 @@ def cells_at_nodes(cells, node_count, cell_start_index):	# depending on the numb
 
 # function to find out to which domain elements a boundary element belongs 
 def connected_domain_cells(boundary_cells_values, node_connectivity):
-    domain_cells_array=numpy.zeros(len(boundary_cells_values)) 	# to return common connected domain cell to be stored as cell_data ("bulk_element_id")
+    number_of_boundary_cells=len(boundary_cells_values)
+    domain_cells_array=numpy.zeros(number_of_boundary_cells) 	# to return unique common connected domain cell to be stored as cell_data ("bulk_element_id"), if there are more than one do not store anything
+    domain_cells_number=numpy.zeros(number_of_boundary_cells)	# number of connected domain_cells
     for cell_index, cell_values in enumerate(boundary_cells_values): 	# cell lists node of which it is comprised
         connected_domain_cells=[]
         for node in cell_values:
             connected_domain_cells.append(node_connectivity[node])
         common_domain_cells=set.intersection(*connected_domain_cells) 
-        if len(common_domain_cells) == 1:	# in a healthy mesh there should be exactly on domain cell per boundary cell
-            domain_cells_array[cell_index]=common_domain_cells.pop()
-        else:
-            warnings.warn( "connected domain cells: boundary cell " + str(cell_index)  + " does not or not uniquely belong to a domain cell. A possible reason might be cells of boundary dimension inside the domain.")
-    return domain_cells_array
+        number_of_connected_domain_cells=len(common_domain_cells)
+        domain_cells_number[cell_index]=number_of_connected_domain_cells
+        if number_of_connected_domain_cells == 1:	# there should be one domain cell for each boundary cell, however cells of boundary dimension may be in the domain (e.g. as sources)
+            domain_cells_array[cell_index]=common_domain_cells.pop()  # assign only one (unique) connected dmain cell
+        elif number_of_connected_domain_cells <1:
+            warnings.warn( "connected domain cells: cell " + str(cell_index)  + " of boundary dimension does not belong to any domain cell")
+    return domain_cells_array, domain_cells_number
 
 
 # some variable declarations
@@ -299,10 +303,8 @@ boundary_cell_data={}	# dict
 
 for boundary_cell_type in boundary_cell_types:
     submesh=None
-    # cells
-    boundary_cells_values = cells_dict[boundary_cell_type]
-    boundary_cells_block = (boundary_cell_type, boundary_cells_values)
-    boundary_cells.append(boundary_cells_block)
+    # cells 1/2
+    boundary_cells_values = cells_dict[boundary_cell_type] 	# preliminary, there may to cells of boundary dimension inside domain
 
     # point_data 
     if args.ogs:
@@ -325,13 +327,22 @@ for boundary_cell_type in boundary_cell_types:
 
     if args.ogs:
         boundary_cell_data_key = ogs_boundary_cell_data_key
-        boundary_cell_data_values = numpy.uint64( connected_domain_cells(boundary_cells_values, node_connectivity) )
+        connected_cells, connected_cells_count  = numpy.uint64( connected_domain_cells(boundary_cells_values, node_connectivity) )
+        boundary_index = connected_cells_count == 1	# a boundary cell is connected with exactly one domain cell
+        boundary_cell_data_values = connected_cells[boundary_index]
         boundary_cell_data[boundary_cell_data_key]=[boundary_cell_data_values]
+        boundary_cells_values=boundary_cells_values[boundary_index]
+        if not boundary_index.all():
+            print("For information, there are cells of boundary dimension not on the boundary (e.g. inside domain).")
     else:
         if boundary_in_physical_group:
             boundary_cell_data_key = gmsh_physical_cell_data_key
             boundary_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][boundary_cell_type] 
             boundary_cell_data[boundary_cell_data_key]=[boundary_cell_data_values]
+
+    # cells 2/2
+    boundary_cells_block = (boundary_cell_type, boundary_cells_values)
+    boundary_cells.append(boundary_cells_block)
 
 boundary_mesh = meshio.Mesh( points=points, point_data=boundary_point_data, cells=boundary_cells, cell_data=boundary_cell_data )
 boundary_mesh.remove_orphaned_nodes()
@@ -366,22 +377,34 @@ for name, data in field_data.items():
             # cells
             subdomain_cells_block=(cell_type, selection_cells_values)
             subdomain_cells.append(subdomain_cells_block)
-      
+
+            # cells of boundary dimension
             if subdomain_dim == boundary_dim: 
-                # point_data and cell_data
+                # point data
                 if args.ogs:
                     selection_point_data_key = ogs_boundary_point_data_key
                     selection_point_data_values = numpy.uint64(domain_mesh_node_numbers)  # all points, will be trimmed later
-                    selection_cell_data_key = ogs_boundary_cell_data_key
-                    selection_cell_data_values = numpy.uint64(connected_domain_cells(selection_cells_values, node_connectivity))
                 else:
                     selection_point_data_key = gmsh_point_data_key
                     selection_point_data_values = point_data[gmsh_point_data_key]  # all points, will be trimmed later
+                subdomain_point_data[selection_point_data_key]=selection_point_data_values
+
+                # cell data  
+                if args.ogs:
+                    connected_cells, connected_cells_count = connected_domain_cells(selection_cells_values, node_connectivity)
+                    boundary_index = connected_cells_count == 1 	# a boundary cell is connected with one domain cell, needed to write bulk_elem_id
+                    if boundary_index.all():  # write bulk_elem_ids (ogs-option) only if all cells of the physical group are at the boundary (otherwise they were undetermined)
+                        selection_cell_data_key = ogs_boundary_cell_data_key
+                        selection_cell_data_values = numpy.uint64(connected_cells)
+                        subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values] 
+                    elif boundary_index.any():
+                            warnings.warn("In physical group " + name + " are cells of boundary dimension at the boundary and inside the domain. Please create separate physical groups for the cells at the boundary and those inside the domain." )
+                else:
                     selection_cell_data_key = gmsh_physical_cell_data_key
                     selection_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index]
-                subdomain_point_data[selection_point_data_key]=selection_point_data_values
-                subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values]
+                    subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values]
 
+            # domain cells
             elif subdomain_dim == domain_dim: 
                 # cell_data
                 selection_cell_data_values = (cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index])
@@ -392,6 +415,7 @@ for name, data in field_data.items():
                     selection_cell_data_key = gmsh_physical_cell_data_key
                 subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values]
 
+            # any cells of lower dimension than boundary
             else:
                 # cell_data
                 selection_cell_data_key = gmsh_physical_cell_data_key	# keep gmsh key, since there are no requirements from OGS 

@@ -71,11 +71,10 @@ dim0 = 0
 dim1 = 1
 dim2 = 2
 dim3 = 3
-available_cell_types = { dim0: {"vertex"}, dim1: {"line"}, dim2: {"triangle", "quad"}, dim3: {"tetra"} }  
-gmsh_point_data_key = "gmsh:dim_tags" 	
+available_cell_types = { dim0: {"vertex"}, dim1: {"line"}, dim2: {"triangle", "quad"}, dim3: {"tetra", "wedge"} }  
 gmsh_physical_cell_data_key = "gmsh:physical"	
 ogs_domain_cell_data_key = "MaterialIDs"
-ogs_boundary_point_data_key = "bulk_node_ids"
+ogs_point_data_key = "bulk_node_ids"	# for all points, as the selection goes via the cells and subsequent trim
 ogs_boundary_cell_data_key = "bulk_elem_ids"
 
 tested_meshio_version = "4.3.6"
@@ -236,7 +235,13 @@ else:
 # Extract domain mesh, note that meshio 4.3.3. offers remove_lower_dimensional_cells(), but we want to keep a uniform style for domain and subdomains. Make sure to use domain_mesh=deepcopy(mesh) in this case!
 ###############################################################################
 domain_cells=[]	# list
-domain_cell_data={}	# dict
+if args.ogs:
+    domain_cell_data_key = ogs_domain_cell_data_key
+else:
+    domain_cell_data_key = gmsh_physical_cell_data_key
+domain_cell_data={} # dict ..
+domain_cell_data[domain_cell_data_key]=[]	# .. with values: list of arrays
+
 for domain_cell_type in domain_cell_types:
     # cells
     domain_cells_values = cells_dict[domain_cell_type]
@@ -253,19 +258,16 @@ for domain_cell_type in domain_cell_types:
     else:
         domain_in_physical_group=False
 	        
-    if args.ogs:
-        domain_cell_data_key = ogs_domain_cell_data_key
-        if domain_in_physical_group:
+    if domain_in_physical_group:
+        if args.ogs:
             domain_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][domain_cell_type]
             domain_cell_data_values = numpy.int32(domain_cell_data_values - id_offset)  # ogs needs MaterialIDs as int32, possibly beginning with zero (by id_offset)
         else:
-            domain_cell_data_values = numpy.zeros((number_of_domain_cells), dtype=int)
-        domain_cell_data[domain_cell_data_key]=[domain_cell_data_values]
-    else:
-        domain_cell_data_key = gmsh_physical_cell_data_key
-        if domain_in_physical_group:
             domain_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][domain_cell_type]
-            domain_cell_data[domain_cell_data_key]=[domain_cell_data_values]
+    else:
+        domain_cell_data_values = numpy.zeros((number_of_domain_cells), dtype=int)
+        print("Some domain cells are not in a physical group, their PhysicalID/MaterialID is set to zero.")
+    domain_cell_data[domain_cell_data_key].append(domain_cell_data_values)
 
 domain_mesh = meshio.Mesh( points=points, cells=domain_cells, cell_data=domain_cell_data)
 # domain_mesh.prune()	# for older meshio version (4.0.16)
@@ -277,44 +279,53 @@ if len(domain_mesh.points) == number_of_original_points:
     print("Domain mesh (written)")
     print_info(domain_mesh)
 
-    # node connectivity for a mixed mesh (double check element numbering!)
-    if args.ogs:
-        cell_start_index=0
-        node_connectivity = [ set() for _ in range(number_of_original_points) ]  # initialize list of sets
-        # make a list for each type of domain cells
-        for cell_block in domain_cells:
-            block_node_connectivity = cells_at_nodes(cell_block[1], number_of_original_points, cell_start_index)  # later used for boundary mesh and submeshes
-            cell_start_index+=len(cell_block[1]) # assume consective cell numbering (as it is written to vtu)
-            # add connectivities of current cell type to entries (sets) of total connectivity (list of sets)
-            for total_list, block_list in zip(node_connectivity, block_node_connectivity):
-                total_list.update(block_list)
+    # node connectivity for a mixed mesh (double check element numbering!), needed with and without ogs option to identify boundary cells
+    cell_start_index=0
+    node_connectivity = [ set() for _ in range(number_of_original_points) ]  # initialize list of sets
+    # make a list for each type of domain cells
+    for cell_block in domain_cells:
+        block_node_connectivity = cells_at_nodes(cell_block[1], number_of_original_points, cell_start_index)  # later used for boundary mesh and submeshes
+        cell_start_index+=len(cell_block[1]) # assume consective cell numbering (as it is written to vtu)
+        # add connectivities of current cell type to entries (sets) of total connectivity (list of sets)
+        for total_list, block_list in zip(node_connectivity, block_node_connectivity):
+            total_list.update(block_list)
+
 else:
     warnings.warn( "There are nodes outside domain, this may lead to ambiguities, no domain-mesh written.")# 
     if args.ogs:
         sys.exit()	# cannot associate bulk data without node_connectivity 
 
+# points, process full list (all points), later trimmed (remove_orphaned nodes) according to cell selection
+if args.ogs:	# overwrite point_data, otherwise let them unchanged
+    point_data={}	# dict
+    domain_mesh_node_numbers = numpy.arange(number_of_original_points)
+    point_data[ogs_point_data_key]= numpy.uint64(domain_mesh_node_numbers) 
+
 
 ###############################################################################
 # Extract boundary mesh
 ###############################################################################
-boundary_point_data={}	# dict
+
+# cells and cell data
 boundary_cells=[]	# list
 boundary_cell_data={}	# dict
+if args.ogs:
+    boundary_cell_data_key = ogs_boundary_cell_data_key
+else:
+    boundary_cell_data_key = gmsh_physical_cell_data_key
+boundary_cell_data[boundary_cell_data_key]=[]
 
 for boundary_cell_type in boundary_cell_types:
-    submesh=None
-    # cells 1/2
-    boundary_cells_values = cells_dict[boundary_cell_type] 	# preliminary, there may to cells of boundary dimension inside domain
-
-    # point_data 
-    if args.ogs:
-        domain_mesh_node_numbers = numpy.arange(number_of_original_points)
-        boundary_point_data_key = ogs_boundary_point_data_key
-        boundary_point_data_values = numpy.uint64(domain_mesh_node_numbers)
-    else:
-        boundary_point_data_key = gmsh_point_data_key
-        boundary_point_data_values = point_data[gmsh_point_data_key]
-    boundary_point_data[boundary_point_data_key]=boundary_point_data_values
+        
+    # cells 
+    boundary_cells_values = cells_dict[boundary_cell_type] 	# preliminary, as there may be cells of boundary dimension inside domain (i.e. which are no boundary cells)
+    connected_cells, connected_cells_count  = numpy.uint64( connected_domain_cells(boundary_cells_values, node_connectivity) )
+    boundary_index = connected_cells_count == 1	# a boundary cell is connected with exactly one domain cell
+    boundary_cells_values=boundary_cells_values[boundary_index]  # final boundary cells
+    boundary_cells_block = (boundary_cell_type, boundary_cells_values)
+    boundary_cells.append(boundary_cells_block)
+    if not boundary_index.all():
+        print("For information, there are cells of boundary dimension not on the boundary (e.g. inside domain).")
 
     # cell_data
     if physical_groups_found:
@@ -326,25 +337,17 @@ for boundary_cell_type in boundary_cell_types:
         boundary_in_physical_group=False
 
     if args.ogs:
-        boundary_cell_data_key = ogs_boundary_cell_data_key
-        connected_cells, connected_cells_count  = numpy.uint64( connected_domain_cells(boundary_cells_values, node_connectivity) )
-        boundary_index = connected_cells_count == 1	# a boundary cell is connected with exactly one domain cell
         boundary_cell_data_values = connected_cells[boundary_index]
-        boundary_cell_data[boundary_cell_data_key]=[boundary_cell_data_values]
-        boundary_cells_values=boundary_cells_values[boundary_index]
-        if not boundary_index.all():
-            print("For information, there are cells of boundary dimension not on the boundary (e.g. inside domain).")
     else:
         if boundary_in_physical_group:
-            boundary_cell_data_key = gmsh_physical_cell_data_key
             boundary_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][boundary_cell_type] 
-            boundary_cell_data[boundary_cell_data_key]=[boundary_cell_data_values]
+        else:   
+            number_of_boundary_cells=len(boundary_cells_values) # cells of specific type
+            boundary_cell_data_values = numpy.zeros((number_of_boundary_cells), dtype=int)
+            print("Some boundary cells are not in a physical group, their PhysicalID is set to zero.")
+    boundary_cell_data[boundary_cell_data_key].append(boundary_cell_data_values)
 
-    # cells 2/2
-    boundary_cells_block = (boundary_cell_type, boundary_cells_values)
-    boundary_cells.append(boundary_cells_block)
-
-boundary_mesh = meshio.Mesh( points=points, point_data=boundary_point_data, cells=boundary_cells, cell_data=boundary_cell_data )
+boundary_mesh = meshio.Mesh( points=points, point_data=point_data, cells=boundary_cells, cell_data=boundary_cell_data )
 boundary_mesh.remove_orphaned_nodes()
 meshio.write( output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii )
 print("Boundary mesh (written)")
@@ -366,66 +369,49 @@ for name, data in field_data.items():
     else:
         warnings.warn("Invalid dimension found in physical groups.")
         continue
-    subdomain_point_data={}	# dict
     subdomain_cells=[]		# list
     subdomain_cell_data={}	# dict
     for cell_type in subdomain_cell_types:
+
+        # cells
         selection_index = cell_data_dict[gmsh_physical_cell_data_key][cell_type] == ph_id
         selection_cells_values = cells_dict[cell_type][selection_index]
-
         if len(selection_cells_values):  # if there are some data
-            # cells
             subdomain_cells_block=(cell_type, selection_cells_values)
             subdomain_cells.append(subdomain_cells_block)
 
-            # cells of boundary dimension
+            # cell data
             if subdomain_dim == boundary_dim: 
-                # point data
                 if args.ogs:
-                    selection_point_data_key = ogs_boundary_point_data_key
-                    selection_point_data_values = numpy.uint64(domain_mesh_node_numbers)  # all points, will be trimmed later
-                else:
-                    selection_point_data_key = gmsh_point_data_key
-                    selection_point_data_values = point_data[gmsh_point_data_key]  # all points, will be trimmed later
-                subdomain_point_data[selection_point_data_key]=selection_point_data_values
-
-                # cell data  
-                if args.ogs:
+                    selection_cell_data_key = ogs_boundary_cell_data_key
                     connected_cells, connected_cells_count = connected_domain_cells(selection_cells_values, node_connectivity)
                     boundary_index = connected_cells_count == 1 	# a boundary cell is connected with one domain cell, needed to write bulk_elem_id
-                    if boundary_index.all():  # write bulk_elem_ids (ogs-option) only if all cells of the physical group are at the boundary (otherwise they were undetermined)
-                        selection_cell_data_key = ogs_boundary_cell_data_key
-                        selection_cell_data_values = numpy.uint64(connected_cells)
-                        subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values] 
-                    elif boundary_index.any():
-                            warnings.warn("In physical group " + name + " are cells of boundary dimension at the boundary and inside the domain. Please create separate physical groups for the cells at the boundary and those inside the domain." )
+                    selection_cell_data_values = numpy.uint64(connected_cells)
+                    if not boundary_index.all():  
+                        warnings.warn("In physical group " + name + " are cells of boundary dimension at the boundary and inside the domain. For those cells inside bulk_elem_id is set to zero, this may cause problems. Please create separate physical groups for the cells at the boundary and those inside the domain." )
                 else:
                     selection_cell_data_key = gmsh_physical_cell_data_key
                     selection_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index]
-                    subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values]
 
-            # domain cells
             elif subdomain_dim == domain_dim: 
-                # cell_data
                 selection_cell_data_values = (cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index])
                 if args.ogs:
                     selection_cell_data_key = ogs_domain_cell_data_key
                     selection_cell_data_values = numpy.int32(selection_cell_data_values - id_offset )
                 else:
                     selection_cell_data_key = gmsh_physical_cell_data_key
-                subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values]
 
             # any cells of lower dimension than boundary
             else:
-                # cell_data
                 selection_cell_data_key = gmsh_physical_cell_data_key	# keep gmsh key, since there are no requirements from OGS 
                 selection_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index]
                 if args.ogs:
                     selection_cell_data_values = numpy.int32(selection_cell_data_values)
-                subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values]
+                
+            subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values] # TODO append
     
     outputfilename = output_basename + "_physical_group_" + name + ".vtu"
-    submesh = meshio.Mesh(points=points, point_data=subdomain_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  #
+    submesh = meshio.Mesh(points=points, point_data=point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  #
     submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
     outputfilename = output_basename + "_physical_group_" + name + ".vtu"
     meshio.write(outputfilename, submesh, binary=not args.ascii)

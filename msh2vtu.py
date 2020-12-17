@@ -71,10 +71,10 @@ dim0 = 0
 dim1 = 1
 dim2 = 2
 dim3 = 3
+ogs_point_data_key = "bulk_node_ids"	# for all points, as the selection goes via the cells and subsequent trim
 available_cell_types = { dim0: {"vertex"}, dim1: {"line"}, dim2: {"triangle", "quad"}, dim3: {"tetra", "wedge"} }  
 gmsh_physical_cell_data_key = "gmsh:physical"	
 ogs_domain_cell_data_key = "MaterialIDs"
-ogs_point_data_key = "bulk_node_ids"	# for all points, as the selection goes via the cells and subsequent trim
 ogs_boundary_cell_data_key = "bulk_elem_ids"
 
 tested_meshio_version = "4.3.6"
@@ -313,7 +313,7 @@ if args.ogs:
     boundary_cell_data_key = ogs_boundary_cell_data_key
 else:
     boundary_cell_data_key = gmsh_physical_cell_data_key
-boundary_cell_data[boundary_cell_data_key]=[]
+boundary_cell_data[boundary_cell_data_key]=[]	# list
 
 for boundary_cell_type in boundary_cell_types:
         
@@ -369,46 +369,50 @@ for name, data in field_data.items():
     else:
         warnings.warn("Invalid dimension found in physical groups.")
         continue
+
     subdomain_cells=[]		# list
+
     subdomain_cell_data={}	# dict
+    if args.ogs:
+        if subdomain_dim==domain_dim:
+            subdomain_cell_data_key = ogs_domain_cell_data_key
+        elif subdomain_dim==boundary_dim:
+            subdomain_cell_data_key = ogs_boundary_cell_data_key
+        else:
+            subdomain_cell_data_key = gmsh_physical_cell_data_key	# use gmsh, as the requirements from OGS
+    else:
+        subdomain_cell_data_key = gmsh_physical_cell_data_key	# same for all dimensions
+    subdomain_cell_data[subdomain_cell_data_key]=[]	# list
+    
     for cell_type in subdomain_cell_types:
 
         # cells
         selection_index = cell_data_dict[gmsh_physical_cell_data_key][cell_type] == ph_id
         selection_cells_values = cells_dict[cell_type][selection_index]
         if len(selection_cells_values):  # if there are some data
-            subdomain_cells_block=(cell_type, selection_cells_values)
-            subdomain_cells.append(subdomain_cells_block)
+            selection_cells_block=(cell_type, selection_cells_values)
+            subdomain_cells.append(selection_cells_block)
 
             # cell data
-            if subdomain_dim == boundary_dim: 
-                if args.ogs:
-                    selection_cell_data_key = ogs_boundary_cell_data_key
+            if args.ogs:
+            
+                if subdomain_dim == boundary_dim: 
                     connected_cells, connected_cells_count = connected_domain_cells(selection_cells_values, node_connectivity)
                     boundary_index = connected_cells_count == 1 	# a boundary cell is connected with one domain cell, needed to write bulk_elem_id
                     selection_cell_data_values = numpy.uint64(connected_cells)
                     if not boundary_index.all():  
-                        warnings.warn("In physical group " + name + " are cells of boundary dimension at the boundary and inside the domain. For those cells inside bulk_elem_id is set to zero, this may cause problems. Please create separate physical groups for the cells at the boundary and those inside the domain." )
-                else:
-                    selection_cell_data_key = gmsh_physical_cell_data_key
-                    selection_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index]
-
-            elif subdomain_dim == domain_dim: 
-                selection_cell_data_values = (cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index])
-                if args.ogs:
-                    selection_cell_data_key = ogs_domain_cell_data_key
-                    selection_cell_data_values = numpy.int32(selection_cell_data_values - id_offset )
-                else:
-                    selection_cell_data_key = gmsh_physical_cell_data_key
-
-            # any cells of lower dimension than boundary
-            else:
-                selection_cell_data_key = gmsh_physical_cell_data_key	# keep gmsh key, since there are no requirements from OGS 
-                selection_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index]
-                if args.ogs:
-                    selection_cell_data_values = numpy.int32(selection_cell_data_values)
+                        warnings.warn("In physical group " + name + " are cells of boundary dimension at the boundary and inside the domain. For those cells inside bulk_elem_id is set to zero, this may cause problems.")	# TODO Please create separate physical groups for the cells at the boundary and those inside the domain." )
                 
-            subdomain_cell_data[selection_cell_data_key]=[selection_cell_data_values] # TODO append
+                elif subdomain_dim == domain_dim: 
+                    selection_cell_data_values = numpy.int32( cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index] -id_offset )
+                
+                else:  # any cells of lower dimension than boundary
+                    selection_cell_data_values = numpy.int32( cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index] )
+
+            else:
+                selection_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index]
+                
+            subdomain_cell_data[subdomain_cell_data_key].append(selection_cell_data_values)
     
     outputfilename = output_basename + "_physical_group_" + name + ".vtu"
     submesh = meshio.Mesh(points=points, point_data=point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  #

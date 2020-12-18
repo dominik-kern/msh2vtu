@@ -279,8 +279,11 @@ if len(domain_mesh.points) == number_of_original_points:
     print("Domain mesh (written)")
     print_info(domain_mesh)
 
-    # node connectivity for a mixed mesh (double check element numbering!), needed with and without ogs option to identify boundary cells
-    cell_start_index=0
+    # store node numbers for use as bulk_node_id (point_data)
+    domain_mesh_node_numbers = numpy.arange(number_of_original_points)
+    
+    # prepare data needed for bulk_elem_id (cell_data)
+    cell_start_index=0    # node connectivity for a mixed mesh (double check element numbering!), needed with and without ogs option to identify boundary cells
     node_connectivity = [ set() for _ in range(number_of_original_points) ]  # initialize list of sets
     # make a list for each type of domain cells
     for cell_block in domain_cells:
@@ -295,6 +298,7 @@ else:
     if args.ogs:
         sys.exit()	# cannot associate bulk data without node_connectivity 
 
+
 ###############################################################################
 # Extract boundary mesh
 ###############################################################################
@@ -302,7 +306,6 @@ else:
 # points, process full list (all points), later trimmed according to cell selection, deep copy needed because removed_orphaned_nodes() operates on shallow copy of point_data
 if args.ogs:	
     boundary_point_data={}	# dict
-    domain_mesh_node_numbers = numpy.arange(number_of_original_points)
     boundary_point_data[ogs_point_data_key]= numpy.uint64(domain_mesh_node_numbers) 
 else:
     boundary_point_data = {key: value[:] for key, value in point_data.items()}  # deep copy
@@ -374,7 +377,6 @@ for name, data in field_data.items():
     # point data
     if args.ogs:	
         subdomain_point_data={}	# dict
-        domain_mesh_node_numbers = numpy.arange(number_of_original_points)   # TODO needed only once
         subdomain_point_data[ogs_point_data_key]= numpy.uint64(domain_mesh_node_numbers) 
     else:
         subdomain_point_data = {key: value[:] for key, value in point_data.items()}  # deep copy
@@ -392,7 +394,8 @@ for name, data in field_data.items():
     else:
         subdomain_cell_data_key = gmsh_physical_cell_data_key	# same for all dimensions
     subdomain_cell_data[subdomain_cell_data_key]=[]	# list
-    
+    subdomain_cell_data_trouble=False	# flag to indicate invalid bulk_element_ids, then no cell data will be written    
+
     for cell_type in subdomain_cell_types:
 
         # cells
@@ -410,8 +413,8 @@ for name, data in field_data.items():
                     boundary_index = connected_cells_count == 1 	# a boundary cell is connected with one domain cell, needed to write bulk_elem_id
                     selection_cell_data_values = numpy.uint64(connected_cells)
                     if not boundary_index.all():  
-                        warnings.warn("In physical group " + name + " are cells of boundary dimension at the boundary and inside the domain. For those cells inside bulk_elem_id is set to zero, this may cause problems.")	# TODO Please create separate physical groups for the cells at the boundary and those inside the domain." )
-                
+                        print("In physical group " + name + " are bulk_elem_ids not uniquely defined, e.g. for cells of boundary dimension inside the domain, and thus not written. If bulk_elem_ids should be written for a physical group, then make sure all its cells of boundary dimension are located at the boundary.")
+                        subdomain_cell_data_trouble=True
                 elif subdomain_dim == domain_dim: 
                     selection_cell_data_values = numpy.int32( cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index] -id_offset )
                 
@@ -424,7 +427,11 @@ for name, data in field_data.items():
             subdomain_cell_data[subdomain_cell_data_key].append(selection_cell_data_values)
     
     outputfilename = output_basename + "_physical_group_" + name + ".vtu"
-    submesh = meshio.Mesh(points=points, point_data=subdomain_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
+    if subdomain_cell_data_trouble:
+        submesh = meshio.Mesh(points=points, point_data=subdomain_point_data, cells=subdomain_cells) 	# do not write invalid cell_data 
+    else:
+        submesh = meshio.Mesh(points=points, point_data=subdomain_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
+
     submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
     outputfilename = output_basename + "_physical_group_" + name + ".vtu"
     meshio.write(outputfilename, submesh, binary=not args.ascii)

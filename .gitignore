@@ -6,3 +6,4 @@ result2bc/*
 tests/*
 tmp/*
 run_tests
+meshio_bugreports/*

@@ -1,6 +1,6 @@
 Try msh2vtu on further Gmsh tutorial examples
 
-Verify domain cell numbering of mixed domains (e.g. tri and quad), i.e. cell numbering in node connectivity matches with vtu-file (and thus OGS), ideally implement OOP style (node_connectivity class) 
+Verify domain cell numbering of mixed domains (e.g. tri and quad), i.e. cell numbering in node connectivity matches with vtu-file (and thus OGS), ideally implement OOP style (node_connectivity class), possibly try to copy cells/cell_data instead of dicts 
 
 Enable higher order elements (replace current workflow: gmsh, msh2vtu_original, createQuadraticMesh, msh2vtu_extract); 
 

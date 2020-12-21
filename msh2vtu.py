@@ -239,10 +239,11 @@ if args.ogs:
     domain_cell_data_key = ogs_domain_cell_data_key
 else:
     domain_cell_data_key = gmsh_physical_cell_data_key
-domain_cell_data={} # dict ..
+domain_cell_data={}	 # dict ..
 domain_cell_data[domain_cell_data_key]=[]	# .. with values: list of arrays
 
 for domain_cell_type in domain_cell_types:
+
     # cells
     domain_cells_values = cells_dict[domain_cell_type]
     number_of_domain_cells=len(domain_cells_values)
@@ -271,7 +272,7 @@ for domain_cell_type in domain_cell_types:
 
 domain_mesh = meshio.Mesh( points=points, cells=domain_cells, cell_data=domain_cell_data)
 # domain_mesh.prune()	# for older meshio version (4.0.16)
-domain_mesh.remove_orphaned_nodes()
+#domain_mesh.remove_orphaned_nodes()  # may cause trouble (meshio 4.3.6 on t3.msh )
 
 
 if len(domain_mesh.points) == number_of_original_points: 

@@ -77,7 +77,7 @@ gmsh_physical_cell_data_key = "gmsh:physical"
 ogs_domain_cell_data_key = "MaterialIDs"
 ogs_boundary_cell_data_key = "bulk_elem_ids"
 
-tested_meshio_version = "4.3.6"
+tested_meshio_version = "4.3.7"
 tested_gmsh_version = "4.4.1"
 
 if meshio.__version__ < tested_meshio_version:
@@ -272,7 +272,7 @@ for domain_cell_type in domain_cell_types:
 
 domain_mesh = meshio.Mesh( points=points, cells=domain_cells, cell_data=domain_cell_data)
 # domain_mesh.prune()	# for older meshio version (4.0.16)
-#domain_mesh.remove_orphaned_nodes()  # may cause trouble (meshio 4.3.6 on t3.msh )
+domain_mesh.remove_orphaned_nodes()  # may cause trouble (meshio 4.3.6 on t3.msh )
 
 
 if len(domain_mesh.points) == number_of_original_points: 

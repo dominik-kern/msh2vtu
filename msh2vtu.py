@@ -353,10 +353,14 @@ for boundary_cell_type in boundary_cell_types:
     boundary_cell_data[boundary_cell_data_key].append(boundary_cell_data_values)
 
 boundary_mesh = meshio.Mesh( points=points, point_data=boundary_point_data, cells=boundary_cells, cell_data=boundary_cell_data )
-boundary_mesh.remove_orphaned_nodes()
-meshio.write( output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii )
-print("Boundary mesh (written)")
-print_info(boundary_mesh)
+if len(boundary_cells):
+    print(boundary_cells)
+    boundary_mesh.remove_orphaned_nodes()
+    meshio.write( output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii )
+    print("Boundary mesh (written)")
+    print_info(boundary_mesh)
+else:
+    print("No boundary elements detected.")
 
 
 ###############################################################################
@@ -433,9 +437,12 @@ for name, data in field_data.items():
     else:
         submesh = meshio.Mesh(points=points, point_data=subdomain_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
 
-    submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
-    outputfilename = output_basename + "_physical_group_" + name + ".vtu"
-    meshio.write(outputfilename, submesh, binary=not args.ascii)
-    print("Submesh " + name + " (written)")
-    print_info(submesh)
+    if len(subdomain_cells):
+        submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
+        outputfilename = output_basename + "_physical_group_" + name + ".vtu"
+        meshio.write(outputfilename, submesh, binary=not args.ascii)
+        print("Submesh " + name + " (written)")
+        print_info(submesh)
+    else:
+        print("Submesh " + name + " empty (not written)")
 

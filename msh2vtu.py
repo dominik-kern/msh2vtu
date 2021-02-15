@@ -270,35 +270,35 @@ for domain_cell_type in domain_cell_types:
         print("Some domain cells are not in a physical group, their PhysicalID/MaterialID is set to zero.")
     domain_cell_data[domain_cell_data_key].append(domain_cell_data_values)
 
-domain_mesh = meshio.Mesh( points=points, cells=domain_cells, cell_data=domain_cell_data)
-# domain_mesh.prune()	# for older meshio version (4.0.16)
-domain_mesh.remove_orphaned_nodes()  # may cause trouble (meshio 4.3.6 on t3.msh )
+if len(domain_cells):   
+    domain_mesh = meshio.Mesh( points=points, cells=domain_cells, cell_data=domain_cell_data)
+    # domain_mesh.prune()	# for older meshio version (4.0.16)
+    domain_mesh.remove_orphaned_nodes()  # may cause trouble (meshio 4.3.6 on t3.msh )
+    if len(domain_mesh.points) == number_of_original_points: 
+        meshio.write( output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii )
+        print("Domain mesh (written)")
+        print_info(domain_mesh)
 
-
-if len(domain_mesh.points) == number_of_original_points: 
-    meshio.write( output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii )
-    print("Domain mesh (written)")
-    print_info(domain_mesh)
-
-    # store node numbers for use as bulk_node_id (point_data)
-    domain_mesh_node_numbers = numpy.arange(number_of_original_points)
+        # store node numbers for use as bulk_node_id (point_data)
+        domain_mesh_node_numbers = numpy.arange(number_of_original_points)
     
-    # prepare data needed for bulk_elem_id (cell_data)
-    cell_start_index=0    # node connectivity for a mixed mesh (double check element numbering!), needed with and without ogs option to identify boundary cells
-    node_connectivity = [ set() for _ in range(number_of_original_points) ]  # initialize list of sets
-    # make a list for each type of domain cells
-    for cell_block in domain_cells:
-        block_node_connectivity = cells_at_nodes(cell_block[1], number_of_original_points, cell_start_index)  # later used for boundary mesh and submeshes
-        cell_start_index+=len(cell_block[1]) # assume consective cell numbering (as it is written to vtu)
-        # add connectivities of current cell type to entries (sets) of total connectivity (list of sets)
-        for total_list, block_list in zip(node_connectivity, block_node_connectivity):
-            total_list.update(block_list)
+        # prepare data needed for bulk_elem_id (cell_data)
+        cell_start_index=0    # node connectivity for a mixed mesh (double check element numbering!), needed with and without ogs option to identify boundary cells
+        node_connectivity = [ set() for _ in range(number_of_original_points) ]  # initialize list of sets
+        # make a list for each type of domain cells
+        for cell_block in domain_cells:
+            block_node_connectivity = cells_at_nodes(cell_block[1], number_of_original_points, cell_start_index)  # later used for boundary mesh and submeshes
+            cell_start_index+=len(cell_block[1]) # assume consective cell numbering (as it is written to vtu)
+            # add connectivities of current cell type to entries (sets) of total connectivity (list of sets)
+            for total_list, block_list in zip(node_connectivity, block_node_connectivity):
+                total_list.update(block_list)
 
+    else:
+        warnings.warn( "There are nodes outside domain, this may lead to ambiguities, no domain-mesh written.")# 
+        if args.ogs:
+            sys.exit()	# cannot associate bulk data without node_connectivity 
 else:
-    warnings.warn( "There are nodes outside domain, this may lead to ambiguities, no domain-mesh written.")# 
-    if args.ogs:
-        sys.exit()	# cannot associate bulk data without node_connectivity 
-
+    print("Empty domain mesh")
 
 ###############################################################################
 # Extract boundary mesh

@@ -137,6 +137,12 @@ parser.add_argument(
     action="store_true",
     help="deleting z-coordinate, for 2D-meshes with z=0 (dimension must be dim=2)",
 )
+parser.add_argument(
+    "-s",
+    "--swapxz",
+    action="store_true",
+    help="swap x and z coordinate (incompatible with z-option for deletion of z-coordinate)",
+)
 
 args = parser.parse_args()
 
@@ -175,6 +181,11 @@ print_info(mesh)
 # original_mesh=meshio.Mesh(points=points, cells=cells, cell_data=cell_data, field_data=field_data)
 meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
 
+if args.swapxz:
+    print("Swapping x- and z-coordinate")
+    xcoord=points[:,0]
+    points[:,2]=xcoord
+    points[:,0]=0.0
 
 # check if element types are supported in current version of this script
 all_available_cell_types=set()	# initial value

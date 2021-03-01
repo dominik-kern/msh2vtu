@@ -184,7 +184,7 @@ meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
 if args.swapxz:
     print("Swapping x- and z-coordinate")
     xcoord=points[:,0]
-    points[:,2]=xcoord
+    points[:,2]=-xcoord
     points[:,0]=0.0
 
 # check if element types are supported in current version of this script

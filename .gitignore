@@ -7,3 +7,7 @@ tests/*
 tmp/*
 run_tests
 meshio_bugreports/*
+packaging
+dist/*
+build/*
+msh2vtu.egg-info/*

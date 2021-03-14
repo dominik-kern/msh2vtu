@@ -144,9 +144,11 @@ if __name__ == '__main__':  # run, if called from the command line
         action="store_true",
         help="swap x and y coordinate",
     )
+    parser.add_argument('--version', action='version', version='v0.2') #TODO introduce canonical variable
+    parser.parse_args(['--version'])
     
     args = parser.parse_args()
-    
+   
     # check if input file exists and is in gmsh-format
     if os.path.isfile(args.filename):
         filename_without_extension = os.path.splitext(args.filename)[0]

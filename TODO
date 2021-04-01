@@ -1,3 +1,5 @@
+extract physical groups for 1D (also boundaries)
+
 Try msh2vtu on further Gmsh tutorial examples
 
 Verify domain cell numbering of mixed domains (e.g. tri and quad), i.e. cell numbering in node connectivity matches with vtu-file (and thus OGS), ideally implement OOP style (node_connectivity class), possibly try use remove_lower_dimensional_cells() for domain or copy cells/cell_data instead of dicts 

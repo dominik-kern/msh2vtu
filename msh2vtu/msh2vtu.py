@@ -144,8 +144,8 @@ if __name__ == '__main__':  # run, if called from the command line
         action="store_true",
         help="swap x and y coordinate",
     )
-    parser.add_argument('--version', action='version', version='v0.2') #TODO introduce canonical variable
-    parser.parse_args(['--version'])
+    parser.add_argument('-v', '--version', action='version', version='v0.2') #TODO introduce canonical variable
+    #parser.parse_args(['--version'])
     
     args = parser.parse_args()
    

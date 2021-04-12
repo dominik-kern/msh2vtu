@@ -55,7 +55,7 @@ Sides = gmsh.model.addPhysicalGroup(dim2, side_tags)
 gmsh.model.setPhysicalName(dim2, Sides, "CubeSides")
 
 Vol = gmsh.model.addPhysicalGroup(dim3, [vol_tag])
-gmsh.model.setPhysicalName(dim2, Vol, "CubeVolume")
+gmsh.model.setPhysicalName(dim3, Vol, "CubeVolume")
 
 
 # mesh

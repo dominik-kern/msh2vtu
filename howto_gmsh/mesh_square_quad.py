@@ -5,7 +5,7 @@ import gmsh
 # Before using any functions in the Python API, Gmsh must be initialized:
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 1)
-gmsh.model.add("rectangle")
+gmsh.model.add("square")
 
 # Dimensions
 dim1=1
@@ -33,7 +33,7 @@ gmsh.model.geo.addPlaneSurface([1], 1)
 
 #  prepare structured grid
 nEhori = 3 
-nEvert = 9
+nEvert = 3
 gmsh.model.geo.mesh.setTransfiniteCurve(1, nEhori)
 gmsh.model.geo.mesh.setTransfiniteCurve(2, nEvert)
 gmsh.model.geo.mesh.setTransfiniteCurve(3, nEhori)
@@ -56,12 +56,12 @@ Left = gmsh.model.addPhysicalGroup(dim1, [4])
 gmsh.model.setPhysicalName(dim1, Left, "Left")
 
 Rectangle = gmsh.model.addPhysicalGroup(dim2, [1])
-gmsh.model.setPhysicalName(dim2, Rectangle, "Column")
+gmsh.model.setPhysicalName(dim2, Rectangle, "UnitSquare")
 
 gmsh.model.geo.synchronize()
 gmsh.model.mesh.generate(dim2)
 gmsh.option.setNumber('Mesh.SecondOrderIncomplete', 1) # serendipity elements
 gmsh.model.mesh.setOrder(2)   # higher order elements (quadratic)
-gmsh.write("rectangle_quad.msh")
+gmsh.write("square_quad.msh")
 
 gmsh.finalize()

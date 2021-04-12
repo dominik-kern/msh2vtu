@@ -5,7 +5,7 @@ import gmsh
 # Before using any functions in the Python API, Gmsh must be initialized:
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 1)
-gmsh.model.add("rectangleMesh")
+gmsh.model.add("square")
 
 # Dimensions
 dim1=1
@@ -45,12 +45,12 @@ Left = gmsh.model.addPhysicalGroup(dim1, [4])
 gmsh.model.setPhysicalName(dim1, Left, "Left")
 
 Rectangle = gmsh.model.addPhysicalGroup(dim2, [1])
-gmsh.model.setPhysicalName(dim2, Rectangle, "Rectangular_Domain")
+gmsh.model.setPhysicalName(dim2, Rectangle, "UnitSquare")
 
 # Before it can be meshed, the internal CAD representation must be synchronized
 gmsh.model.geo.synchronize()
 gmsh.model.mesh.generate(dim2)
 gmsh.model.mesh.setOrder(2)   # higher order, for simplex elements there is no difference between Lagrange and Serendipity
-gmsh.write("rectangular_tri.msh")
+gmsh.write("square_tri.msh")
 
 gmsh.finalize()

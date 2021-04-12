@@ -70,12 +70,12 @@ E = gmsh.model.addPhysicalGroup(dim2, [5])
 gmsh.model.setPhysicalName(dim2, E, "Eingang")
 
 W = gmsh.model.addPhysicalGroup(dim3, [1])
-gmsh.model.setPhysicalName(dim3, E, "Wuerfel")
+gmsh.model.setPhysicalName(dim3, W, "Wuerfel")
 
 # mesh
 gmsh.model.geo.synchronize()
 gmsh.model.mesh.generate(dim3)
-gmsh.model.mesh.setOrder(2)   # higher order, no difference between Lagrange and Serendipity elements
+gmsh.model.mesh.setOrder(2)   # higher order, for simplex (tetra) no difference between Lagrange and Serendipity elements
 
 gmsh.write("cube_tet.msh")
 gmsh.finalize()

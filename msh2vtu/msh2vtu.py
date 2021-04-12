@@ -73,7 +73,7 @@ if __name__ == '__main__':  # run, if called from the command line
     dim2 = 2
     dim3 = 3
     ogs_point_data_key = "bulk_node_ids"	# for all points, as the selection goes via the cells and subsequent trim
-    available_cell_types = { dim0: {"vertex"}, dim1: {"line", "line3"}, dim2: {"triangle", "triangle6", "quad", "quad9"}, dim3: {"tetra", "wedge"} }  
+    available_cell_types = { dim0: {"vertex"}, dim1: {"line", "line3"}, dim2: {"triangle", "triangle6", "quad", "quad8", "quad9"}, dim3: {"tetra", "tetra10", "wedge", "hexahedron", "hexahedron20", "hexahedron27"} }  
     gmsh_physical_cell_data_key = "gmsh:physical"	
     ogs_domain_cell_data_key = "MaterialIDs"
     ogs_boundary_cell_data_key = "bulk_elem_ids"

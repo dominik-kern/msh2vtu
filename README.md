@@ -1,7 +1,7 @@
 # msh2vtu
 
 This script depends on [meshio](https://github.com/nschloe/meshio).
-It was tested with meshio 4.3.6 [Python 3.8.5] and gmsh 4.4.1.
+It was tested with meshio 4.3.12 [Python 3.8.5] and gmsh 4.4.1.
 
 Note that msh2vtu is still restricted to linear meshes, such as 3-point triangles or 4-point quadrilaterals!
 

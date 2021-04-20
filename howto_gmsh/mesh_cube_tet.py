@@ -61,16 +61,16 @@ gmsh.model.geo.addVolume([1], 1)
 
 # physical groups
 DCBF = gmsh.model.addPhysicalGroup(dim2, [4,3,2,6])
-gmsh.model.setPhysicalName(dim2, DCBF, "Tunnel")
+gmsh.model.setPhysicalName(dim2, DCBF, "sides")
 
 A = gmsh.model.addPhysicalGroup(dim2, [1])
-gmsh.model.setPhysicalName(dim2, A, "Ausgang")
+gmsh.model.setPhysicalName(dim2, A, "top")
 
 E = gmsh.model.addPhysicalGroup(dim2, [5])
-gmsh.model.setPhysicalName(dim2, E, "Eingang")
+gmsh.model.setPhysicalName(dim2, E, "bottom")
 
 W = gmsh.model.addPhysicalGroup(dim3, [1])
-gmsh.model.setPhysicalName(dim3, W, "Wuerfel")
+gmsh.model.setPhysicalName(dim3, W, "volume")
 
 # mesh
 gmsh.model.geo.synchronize()

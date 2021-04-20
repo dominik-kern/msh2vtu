@@ -46,16 +46,16 @@ vol_tag=newEntities[1][1]
 side_tags=[nE[1] for nE in newEntities[2:] ]
 
 Bottom = gmsh.model.addPhysicalGroup(dim2, [1])
-gmsh.model.setPhysicalName(dim2, Bottom, "CubeBottom")
+gmsh.model.setPhysicalName(dim2, Bottom, "bottom")
 
 Top = gmsh.model.addPhysicalGroup(dim2, [top_tag])
-gmsh.model.setPhysicalName(dim2, Top, "CubeTop")
+gmsh.model.setPhysicalName(dim2, Top, "top")
 
 Sides = gmsh.model.addPhysicalGroup(dim2, side_tags)
-gmsh.model.setPhysicalName(dim2, Sides, "CubeSides")
+gmsh.model.setPhysicalName(dim2, Sides, "sides")
 
 Vol = gmsh.model.addPhysicalGroup(dim3, [vol_tag])
-gmsh.model.setPhysicalName(dim3, Vol, "CubeVolume")
+gmsh.model.setPhysicalName(dim3, Vol, "volume")
 
 
 # mesh

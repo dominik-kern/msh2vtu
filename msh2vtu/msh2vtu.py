@@ -78,7 +78,7 @@ if __name__ == '__main__':  # run, if called from the command line
     ogs_domain_cell_data_key = "MaterialIDs"
     ogs_boundary_cell_data_key = "bulk_elem_ids"
     
-    tested_meshio_version = "4.3.12"
+    tested_meshio_version = "4.4.0"
     tested_gmsh_version = "4.4.1"
     
     if meshio.__version__ < tested_meshio_version:

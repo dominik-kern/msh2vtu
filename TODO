@@ -1,5 +1,6 @@
-Is there need to process meshes (with --ogs option) that contain nodes which are not part of the domain?
-Then one hopes there occur in no further groups, as they have no nulk-node-id (point data)
+warning if more nodes than domain
+add connectivity only to domain nodes
+error if orphaned node is accessed
 
 Extract physical groups for 1D (also boundaries)
 

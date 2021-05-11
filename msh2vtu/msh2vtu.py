@@ -34,7 +34,7 @@ def print_info(mesh):
     print("##")
 
 
-# function to create node connectivity list, i.e. store for each node to which domain elements it belongs
+# function to create node connectivity list, i.e. store for each node (point) to which element (cell) it belongs
 def cells_at_nodes(cells, node_count, cell_start_index):	# depending on the numbering of mixed meshes in OGS one may think of an object-oriented way to add elements (of different type) to node connectivity
     node_connectivity = [ set() for _ in range(node_count) ]  # initialize list of sets
     cell_index = cell_start_index
@@ -42,6 +42,10 @@ def cells_at_nodes(cells, node_count, cell_start_index):	# depending on the numb
         for node in cell:
             node_connectivity[node].add(cell_index)
         cell_index += 1
+    if node_connectivity.count(set()) > 0:
+        unconnected_nodes =  [ node for node in range(node_count) if node_connectivity[node]==set() ] 
+        print("points not connected with domain cells:")
+        print(unconnected_nodes)
     return node_connectivity
 
 
@@ -60,7 +64,11 @@ def connected_domain_cells(boundary_cells_values, node_connectivity):
         if number_of_connected_domain_cells == 1:	# there should be one domain cell for each boundary cell, however cells of boundary dimension may be in the domain (e.g. as sources)
             domain_cells_array[cell_index]=common_domain_cells.pop()  # assign only one (unique) connected dmain cell
         elif number_of_connected_domain_cells <1:
-            warnings.warn( "connected domain cells: cell " + str(cell_index)  + " of boundary dimension does not belong to any domain cell")
+            warnings.warn( "connected domain cells: cell " + str(cell_index)  + " of boundary dimension does not belong to any domain cell!")
+            # domain_cell in domain_cells_array remains zero, as there is no cell to assign
+        else:
+            warnings.warn( "connected domain cells: cell " + str(cell_index)  + " of boundary dimension belongs to more than one domain cell!")
+            # domain_cell in domain_cells_array remains zero, because structure is 1D and only the boundary case is relevant for further use
     return domain_cells_array, domain_cells_number
 
 
@@ -80,6 +88,7 @@ if __name__ == '__main__':  # run, if called from the command line
     
     tested_meshio_version = "4.4.0"
     tested_gmsh_version = "4.4.1"
+    msh2vtu_version = "0.3"
     
     if meshio.__version__ < tested_meshio_version:
         warnings.warn(
@@ -144,7 +153,7 @@ if __name__ == '__main__':  # run, if called from the command line
         action="store_true",
         help="swap x and y coordinate",
     )
-    parser.add_argument('-v', '--version', action='version', version='v0.2') #TODO introduce canonical variable
+    parser.add_argument('-v', '--version', action='version', version=msh2vtu_version) 
     #parser.parse_args(['--version'])
     
     args = parser.parse_args()
@@ -286,7 +295,7 @@ if __name__ == '__main__':  # run, if called from the command line
     if len(domain_cells):   
         domain_mesh = meshio.Mesh( points=points, cells=domain_cells, cell_data=domain_cell_data)
         # domain_mesh.prune()	# for older meshio version (4.0.16)
-        domain_mesh.remove_orphaned_nodes()  # may cause trouble (meshio 4.3.6 on t3.msh )
+        domain_mesh.remove_orphaned_nodes()  # may cause trouble with meshio < 4.3.6 
         if len(domain_mesh.points) == number_of_original_points: 
             meshio.write( output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii )
             print("Domain mesh (written)")
@@ -296,12 +305,12 @@ if __name__ == '__main__':  # run, if called from the command line
             domain_mesh_node_numbers = numpy.arange(number_of_original_points)
         
             # prepare data needed for bulk_elem_id (cell_data)
-            cell_start_index=0    # node connectivity for a mixed mesh (double check element numbering!), needed with and without ogs option to identify boundary cells
+            cell_start_index=0    # node connectivity for a mixed mesh (check for OGS compliance), needed with and without ogs option to identify boundary cells
             node_connectivity = [ set() for _ in range(number_of_original_points) ]  # initialize list of sets
             # make a list for each type of domain cells
             for cell_block in domain_cells:
                 block_node_connectivity = cells_at_nodes(cell_block[1], number_of_original_points, cell_start_index)  # later used for boundary mesh and submeshes
-                cell_start_index+=len(cell_block[1]) # assume consective cell numbering (as it is written to vtu)
+                cell_start_index+=len(cell_block[1]) # assume consecutive cell numbering (as it is written to vtu)
                 # add connectivities of current cell type to entries (sets) of total connectivity (list of sets)
                 for total_list, block_list in zip(node_connectivity, block_node_connectivity):
                     total_list.update(block_list)
@@ -339,11 +348,18 @@ if __name__ == '__main__':  # run, if called from the command line
         boundary_cells_values = cells_dict[boundary_cell_type] 	# preliminary, as there may be cells of boundary dimension inside domain (i.e. which are no boundary cells)
         connected_cells, connected_cells_count  = numpy.uint64( connected_domain_cells(boundary_cells_values, node_connectivity) )
         boundary_index = connected_cells_count == 1	# a boundary cell is connected with exactly one domain cell
+        if not boundary_index.all():
+            print("For information, there are cells of boundary dimension not on the boundary (e.g. inside domain).")
+            multi_connection_index = connected_cells_count > 1
+            print("cells of type " + boundary_cell_type + " connected to more than one domain cell:")
+            print(boundary_cells_values[multi_connection_index])
+            zero_connection_index = connected_cells_count < 1
+            print("cells of type " + boundary_cell_type + " connected to no domain cell:")
+            print(boundary_cells_values[zero_connection_index])
+            
         boundary_cells_values=boundary_cells_values[boundary_index]  # final boundary cells
         boundary_cells_block = (boundary_cell_type, boundary_cells_values)
         boundary_cells.append(boundary_cells_block)
-        if not boundary_index.all():
-            print("For information, there are cells of boundary dimension not on the boundary (e.g. inside domain).")
     
         # cell_data
         if physical_groups_found:

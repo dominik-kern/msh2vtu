@@ -44,16 +44,19 @@ def find_cells_at_nodes(cells, node_count, cell_start_index):	# depending on the
         cell_index += 1
     if node_connectivity.count(set()) > 0:
         unconnected_nodes =  [ node for node in range(node_count) if node_connectivity[node]==set() ] 
-        print("points not connected with domain cells:")
+        print("Points not connected with domain cells:")
         print(unconnected_nodes)
     return node_connectivity
 
 
 # function to find out to which domain elements a boundary element belongs 
 def find_connected_domain_cells(boundary_cells_values, domain_cells_at_node):
+    warned_gt1 = False   # to avoid flood of warnings
+    warned_lt1 = False   # to avoid flood of warnings 
     number_of_boundary_cells = len(boundary_cells_values)
     domain_cells_array = numpy.zeros(number_of_boundary_cells) 	# to return unique common connected domain cell to be stored as cell_data ("bulk_element_id"), if there are more than one do not store anything
     domain_cells_number = numpy.zeros(number_of_boundary_cells)	# number of connected domain_cells
+    
     for cell_index, cell_values in enumerate(boundary_cells_values): 	# cell lists node of which it is comprised
         connected_domain_cells = []
         for node in cell_values:
@@ -63,12 +66,17 @@ def find_connected_domain_cells(boundary_cells_values, domain_cells_at_node):
         domain_cells_number[cell_index]=number_of_connected_domain_cells
         if number_of_connected_domain_cells == 1:	# there should be one domain cell for each boundary cell, however cells of boundary dimension may be in the domain (e.g. as sources)
             domain_cells_array[cell_index] = common_domain_cells.pop()  # assign only one (unique) connected dmain cell
-        elif number_of_connected_domain_cells <1:
-            warnings.warn( "connected domain cells: cell " + str(cell_index)  + " of boundary dimension does not belong to any domain cell!")
+        elif number_of_connected_domain_cells <1 and not warned_lt1:
+            print( "find_connected_domain_cells: cell " + str(cell_index)  + " of boundary dimension does not belong to any domain cell!")
             # domain_cell in domain_cells_array remains zero, as there is no cell to assign
-        else:
-            warnings.warn( "connected domain cells: cell " + str(cell_index)  + " of boundary dimension belongs to more than one domain cell!")
+            warned_lt1 = True
+            print("Possibly more cells may not belong to any domain cell.")
+        elif not warned_gt1:
+            print("find_connected_domain_cells: cell " + str(cell_index)  + " of boundary dimension belongs to more than one domain cell!")
             # domain_cell in domain_cells_array remains zero, because structure is 1D and only the boundary case is relevant for further use
+            warned_gt1 = True
+            print("Possibly more cells may belong to  more than one domain cell.")
+            
     return domain_cells_array, domain_cells_number
 
 
@@ -89,7 +97,7 @@ if __name__ == '__main__':  # run, if called from the command line
     
     tested_meshio_version = "4.4.0"
     tested_gmsh_version = "4.4.1"
-    msh2vtu_version = "0.3"
+    msh2vtu_version = "0.4"
     
     if meshio.__version__ < tested_meshio_version:
         warnings.warn(
@@ -134,7 +142,7 @@ if __name__ == '__main__':  # run, if called from the command line
         "--dim",
         type=int,
         default=0,
-        help="spatial dimension (2 or 3), trying automatic detection, if not given",
+        help="spatial dimension (1, 2 or 3), trying automatic detection, if not given",
     )
     parser.add_argument(
         "-o",
@@ -361,10 +369,10 @@ if __name__ == '__main__':  # run, if called from the command line
         if not boundary_index.all():
             print("For information, there are cells of boundary dimension not on the boundary (e.g. inside domain).")
             multi_connection_index = connected_cells_count > 1
-            print("cells of type " + boundary_cell_type + " connected to more than one domain cell:")
+            print("Cells of type " + boundary_cell_type + " connected to more than one domain cell:")
             print(boundary_cells_values[multi_connection_index])
             zero_connection_index = connected_cells_count < 1
-            print("cells of type " + boundary_cell_type + " connected to no domain cell:")
+            print("Cells of type " + boundary_cell_type + " not connected to any domain cell:")
             print(boundary_cells_values[zero_connection_index])
             
         boundary_cells_values=boundary_cells_values[boundary_index]  # final boundary cells

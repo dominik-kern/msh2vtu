@@ -154,7 +154,7 @@ if __name__ == '__main__':  # run, if called from the command line
         "-z",
         "--delz",
         action="store_true",
-        help="deleting z-coordinate, for 2D-meshes with z=0 (dimension must be dim=2)",
+        help="deleting z-coordinate, for 2D-meshes with z=0, note that vtu-format requires 3D points",
     )
     parser.add_argument(
         "-s",
@@ -201,11 +201,6 @@ if __name__ == '__main__':  # run, if called from the command line
     # write original mesh (only file conversion)
     meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
     
-    if args.swapxy:
-        print("Swapping x- and y-coordinate")
-        points[:,0], points[:,1] = points[:,1], -points[:,0]
-        points[:,2]=0
-    
     # check if element types are supported in current version of this script
     all_available_cell_types=set()	# initial value
     for cell_types in available_cell_types.values():	
@@ -227,9 +222,19 @@ if __name__ == '__main__':  # run, if called from the command line
     else:
         dim=args.dim	# trust the user
     
-    # delete third dimension if wanted  
-    if args.delz and dim==dim2:
-    	mesh.prune_z_0()
+    # delete third dimension if wanted by user  
+    if args.delz:
+        if dim<=dim2:
+            print("Remove z coordinate of all points.")
+            mesh.prune_z_0()
+            points = mesh.points   # update variable
+        else:
+            print("Mesh seems to be in 3D, z-coordinate cannot be removed. Option -z ignored.")
+    
+    # special case in 2D workflow
+    if args.swapxy:
+        print("Swapping x- and y-coordinate")
+        points[:,0], points[:,1] = points[:,1], -points[:,0]
     
     # boundary and domain cell types depend on dimension
     if dim1<=dim and dim<=dim3:

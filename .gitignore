@@ -3,8 +3,10 @@ examples/*.vtu
 intro.ipy
 forum_example/*
 result2bc/*
-tests/*
 tmp/*
+tests/*.vtu
+tests/*.msh
+tests/*.py
 run_tests
 meshio_bugreports/*
 packaging

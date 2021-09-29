@@ -8,8 +8,8 @@ These are
 ![terrain](terrain.png)
 
 ## Gmsh
-If the relief is given as relief.grd, then we need to convert it first
-``python3 grd2stl``.
+If the relief is given as relief.grd, then we need to convert it first (file names are hard coded)
+``python3 grd2stl.py``.
 
 Running ``python3 gmsh_mesh.py`` reads in relief.stl and meshes the volume between the relief and a *z*-coordinate specified in the script.
 In addition it creates physical groups for all bounding surfaces. 
@@ -19,7 +19,7 @@ In addition it creates physical groups for all bounding surfaces.
 ## OGS Utilities
 
 OGS comes with some utilities for meshing. Required are raster files (_*.grd_) and a file specifying their sequence (here *layer_file_list*).
-The following commands create a 2D mesh, extrude it to 3D-wedge elements and then fit in an structured hex mesh.
+The following commands create a 2D mesh, extrude it to 3D-wedge elements and then fit in a structured hex mesh.
 ```
 generateStructuredMesh -e tri --lx 10 --nx 20 --ly 10 --ny 20 -o tri2d_mesh.vtu
 createLayeredMeshFromRasters -i tri2d_mesh.vtu -o wedge3d_mesh.vtu -r layer_file_list

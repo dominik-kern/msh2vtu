@@ -10,6 +10,7 @@ Requirements: relief.stl (possibly converted from relief.grd)
 It is assumed that curves and points of read-in boundary are ordered.
 
 TODO 
+    - N-E-S-W instead of front/left/...
     - use transfinite curves/surfaces/volumes to create a hex-mesh
     - make class for SIDES
     - try to detect side points automatically from stl
@@ -20,16 +21,24 @@ import os
 import sys
 import numpy as np
 
-dim1=1
-dim2=2
-dim3=3
-EPS = 1e-12   # for collinearity check, 
+dim1 = 1
+dim2 = 2
+dim3 = 3
+EPS = 1e-6   # for collinearity check, 
 
 # side definitions (straight lines), points chosen outside to prevent collocation
-side_points = {"front": {"p1": np.array([10, -1]), "p2": np.array([10, -2])}, 
-               "right": {"p1": np.array([-1, 10]), "p2": np.array([-2, 10])}, 
-               "back":  {"p1": np.array([ 0, -1]), "p2": np.array([ 0, -2])}, 
-               "left":  {"p1": np.array([-1,  0]), "p2": np.array([-2,  0])}}   # a line is defined by two points: p1 (x,y), p2 (x,y)
+X0 =  0 
+X1 = 10
+DX =  1
+Y0 =  0
+Y1 = 10
+DY =  1
+Z = 7   # bottom_level
+
+side_points = {"front": {"p1": np.array([X1, Y0-DY]), "p2": np.array([X1, Y1+DY])}, 
+               "right": {"p1": np.array([X0-DX, Y1]), "p2": np.array([X1+DX, Y1])}, 
+               "back":  {"p1": np.array([X0, Y0-DY]), "p2": np.array([X0, Y1+DY])}, 
+               "left":  {"p1": np.array([X0-DX, Y0]), "p2": np.array([X1+DX, Y0])}}   # a line is defined by two points: p1 (x,y), p2 (x,y)
 
 side_surface_ids = {"front": [], 
                     "right": [], 
@@ -37,21 +46,28 @@ side_surface_ids = {"front": [],
                     "left":  []}   
 
 
-def collinear2D(p0, p1, p2):   
-    x1, y1 = p1[0] - p0[0], p1[1] - p0[1]
+def collinear2D(p0, p1, p2):   #
+    x1, y1 = p0[0] - p1[0], p0[1] - p1[1]
     x2, y2 = p2[0] - p0[0], p2[1] - p0[1]
-    return abs(x1 * y2 - x2 * y1) < EPS
+    CROSS_PRODUCT = x1 * y2 - x2 * y1
+    print("p0-p1=[{}, {}]".format(x1,y1))
+    print("p2-p0=[{}, {}]".format(x2,y2))
+    print(CROSS_PRODUCT)
+    return abs(CROSS_PRODUCT) < EPS
 
 def on_line2D(xyz, guess):
     p0 = np.array([xyz[0], xyz[1]])
+    print(p0)
     points = side_points[guess]
     if collinear2D(p0, points["p1"], points["p2"]):
         return guess
     else:
         for side, points in side_points.items():
+            print(side)
             if collinear2D(p0, points["p1"], points["p2"]):
                 return side
-    return "point not on one of the give sides"
+    print("point " + str(p0) + " not on a given side")            
+    return "NO SIDE FOUND" 
 
 
 gmsh.initialize(sys.argv) # use finalize to unload from memory
@@ -83,12 +99,11 @@ top_curves = gmsh.model.getEntities(1)   # discrete surface
 top_points = gmsh.model.getEntities(0)   # discrete surface 
 
 ## create geometric entities to form one volume below the terrain surface
-z = 7   # bottom_level
 bottom_point_ids = []
 side_curve_ids = []   # vertical lines
 for top_point in top_points:
     xyz = gmsh.model.getValue(0, top_point[1], [])   # get x,y,z coordinates   
-    bottom_point_id = gmsh.model.geo.addPoint(xyz[0], xyz[1], z)
+    bottom_point_id = gmsh.model.geo.addPoint(xyz[0], xyz[1], Z)
     bottom_point_ids.append(bottom_point_id)
     side_curve_id = gmsh.model.geo.addLine(bottom_point_id, top_point[1])
     side_curve_ids.append(side_curve_id)
@@ -104,7 +119,12 @@ for ci, top_curve in enumerate(top_curves):
     xyz_ip1 = gmsh.model.getValue(0, bottom_point_ids[cip1], [])   # get x,y,z coordinates 
     xyz = 0.5*(xyz_i+xyz_ip1)   # midpoint
     detected_side = on_line2D(xyz, guessed_side)
-    guessed_side =  detected_side   # next guess
+    if detected_side not in side_points:
+        print("Geometry error")
+        gmsh.finalize()
+        sys.exit()
+    else:
+        guessed_side =  detected_side   # next guess
     
     bottom_curve_id = gmsh.model.geo.addLine(bottom_point_ids[ci], bottom_point_ids[cip1])
     bottom_curve_ids.append(bottom_curve_id)
@@ -141,8 +161,8 @@ gmsh.model.setPhysicalName(dim3, Volume1, "volume")
 
 # meshing
 
-gmsh.option.setNumber('Mesh.MeshSizeMin', 0.1)
-gmsh.option.setNumber('Mesh.MeshSizeMax', 1.0)
+gmsh.option.setNumber('Mesh.MeshSizeMin', 500)
+gmsh.option.setNumber('Mesh.MeshSizeMax', 5000)
 gmsh.model.mesh.generate(3)
 gmsh.write('gmsh_terrain.msh')
 

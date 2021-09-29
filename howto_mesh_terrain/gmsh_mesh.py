@@ -25,6 +25,8 @@ dim1 = 1
 dim2 = 2
 dim3 = 3
 EPS = 1e-6   # for collinearity check, 
+MIN_SIZE = 0.1 # minimum element size
+MAX_SIZE = 1.0 # maximum elemenz size
 
 # side definitions (straight lines), points chosen outside to prevent collocation
 X0 =  0 
@@ -161,8 +163,8 @@ gmsh.model.setPhysicalName(dim3, Volume1, "volume")
 
 # meshing
 
-gmsh.option.setNumber('Mesh.MeshSizeMin', 500)
-gmsh.option.setNumber('Mesh.MeshSizeMax', 5000)
+gmsh.option.setNumber('Mesh.MeshSizeMin', MIN_SIZE)
+gmsh.option.setNumber('Mesh.MeshSizeMax', MAX_SIZE)
 gmsh.model.mesh.generate(3)
 gmsh.write('gmsh_terrain.msh')
 

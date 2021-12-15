@@ -3,6 +3,8 @@
 This script depends on [meshio](https://github.com/nschloe/meshio).
 It was tested with meshio 4.4.0 [Python 3.8.5] and gmsh 4.4.1.
 
+**There seems to be trouble with the latest versions of GMSH and/or MESHIO, I will try to catch up as soon as I can.**
+
 Supported element types
 - lines (linear and quadratic) in 1D
 - triangles and quadrilaterals (linear and quadratic) in 2D

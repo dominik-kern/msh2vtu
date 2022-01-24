@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Author: Dominik Kern (TU Bergakademie Freiberg)
-# Python version 3.8.5
+# Python version 3.9.7
 import meshio  # https://github.com/nschloe/meshio
 import os
 import sys
@@ -18,6 +18,8 @@ import warnings
 #    new_points = points[unique_points]  # extract only used nodes
 #    new_cells = unique_inverse.reshape(original_shape)  # update cell connectivity
 #    return new_points, new_cells
+
+# runfile('msh2vtu.py', args='../tests/square_tri.msh')
 
 
 # print info for mesh: statistics and data field names
@@ -95,18 +97,20 @@ if __name__ == '__main__':  # run, if called from the command line
     ogs_domain_cell_data_key = "MaterialIDs"
     ogs_boundary_cell_data_key = "bulk_elem_ids"
     
-    tested_meshio_version = "4.4.0"
-    tested_gmsh_version = "4.4.1"
+    tested_meshio_version = "4.4.8"
+    tested_gmsh_version = "4.4.6"
     msh2vtu_version = "0.4"
     
     if meshio.__version__ < tested_meshio_version:
         warnings.warn(
-            "Warning, out-dated Meshio version. In case of errors watch for commented code fragments from previous versions in this script (msh2vtu)."
+            "Warning, out-dated MeshIO version. In case of errors watch for commented code fragments from previous versions in this script (msh2vtu)."
         )
     elif meshio.__version__ > tested_meshio_version:
         print(
-            "Newer version of Meshio than supported. Backward compatibility may be missing!"
+            "Newer version of MeshIO than supported. Backward compatibility may be missing!"
         )
+        print("MeshIO version > 5.0 brings relevant changes. MSH2VTU will catch up as PyVista does so.")
+    print('##')
     
     # parsing command line arguments
     parser = argparse.ArgumentParser()
@@ -198,8 +202,9 @@ if __name__ == '__main__':  # run, if called from the command line
     
     print("Original mesh (read)")
     print_info(mesh)
-    # write original mesh (only file conversion)
+    print("Trying to save original mesh as vtu-file (possibly not all features may be saved)")
     meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
+    print('##')
     
     # check if element types are supported in current version of this script
     all_available_cell_types=set()	# initial value

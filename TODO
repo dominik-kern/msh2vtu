@@ -1,3 +1,5 @@
+Adapt to MeshIO v. 5.x.y, find a substitute for remove_orphaned_nodes()
+
 handle physical group integer IDs
 
 Offer option to check 2D meshes for common surface normale (n=(P2-P1 x P3-P1), sign(n*ez or e_user) and possibly enforce it (change element connectivity)

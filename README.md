@@ -1,3 +1,5 @@
+**There seems to be trouble with the latest versions of GMSH and/or MESHIO, I will try to catch up as soon as I can.**
+
 # msh2vtu
 
 This script depends on [meshio](https://github.com/nschloe/meshio).

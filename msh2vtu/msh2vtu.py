@@ -456,8 +456,8 @@ if __name__ == '__main__':  # run, if called from the command line
                 subdomain_cell_data_key = gmsh_physical_cell_data_key	# use gmsh, as the requirements from OGS
         else:
             subdomain_cell_data_key = gmsh_physical_cell_data_key	# same for all dimensions
-        subdomain_cell_data[subdomain_cell_data_key]=[]	# list
-        subdomain_cell_data_trouble=False	# flag to indicate invalid bulk_element_ids, then no cell data will be written    
+        subdomain_cell_data[subdomain_cell_data_key] = []	# list
+        subdomain_cell_data_trouble = False	# flag to indicate invalid bulk_element_ids, then no cell data will be written    
     
         for cell_type in subdomain_cell_types:
     

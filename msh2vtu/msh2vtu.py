@@ -321,7 +321,7 @@ if __name__ == '__main__':  # run, if called from the command line
     if len(domain_cells):   
         domain_mesh = meshio.Mesh( points=all_points, point_data=all_point_data, cells=domain_cells, cell_data=domain_cell_data)
         # domain_mesh.prune()	# for older meshio version (4.0.16)
-        domain_mesh.remove_orphaned_nodes()  # may cause trouble with meshio < 4.3.6 
+        # domain_mesh.remove_orphaned_nodes()  # may cause trouble with meshio < 4.3.6 
         if len(domain_mesh.points) != number_of_original_points: 
             warnings.warn( "There are nodes out of the domain mesh. If ogs option is set, then no bulk_node_id can be assigned to these nodes.")
         meshio.write( output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii )
@@ -412,7 +412,7 @@ if __name__ == '__main__':  # run, if called from the command line
     boundary_mesh = meshio.Mesh( points=all_points, point_data=all_point_data, cells=boundary_cells, cell_data=boundary_cell_data )
     if len(boundary_cells):
         #print(boundary_cells)
-        boundary_mesh.remove_orphaned_nodes()
+        #boundary_mesh.remove_orphaned_nodes()
         meshio.write( output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii )
         print("Boundary mesh (written)")
         print_info(boundary_mesh)
@@ -496,7 +496,7 @@ if __name__ == '__main__':  # run, if called from the command line
             submesh = meshio.Mesh(points=all_points, point_data=all_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
     
         if len(subdomain_cells):
-            submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
+            #submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
             outputfilename = output_basename + "_physical_group_" + name + ".vtu"
             meshio.write(outputfilename, submesh, binary=not args.ascii)
             print("Submesh " + name + " (written)")

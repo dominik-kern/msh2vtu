@@ -12,11 +12,24 @@ dim2=2
 dim3=3
 lc = 1.0    # mesh size
 
-# vertices (dim=0)
-gmsh.model.geo.addPoint(1, 0, 0, lc, 1)
-gmsh.model.geo.addPoint(1, 1, 0, lc, 2)
-gmsh.model.geo.addPoint(0, 1, 0, lc, 3)
-gmsh.model.geo.addPoint(0, 0, 0, lc, 4)
+# opposite vertices
+x0 = 0.0
+y0 = 0.0 
+z0 = 0.0
+x1 = 1.0
+y1 = 1.0
+z1 = 1.0
+
+# vertices
+gmsh.model.geo.addPoint(x1, y0, z0, lc, 1)
+gmsh.model.geo.addPoint(x1, y1, z0, lc, 2)
+gmsh.model.geo.addPoint(x0, y1, z0, lc, 3)
+gmsh.model.geo.addPoint(x0, y0, z1, lc, 4)
+gmsh.model.geo.addPoint(x1, y0, z1, lc, 5)
+gmsh.model.geo.addPoint(x1, y1, z1, lc, 6)
+gmsh.model.geo.addPoint(x0, y1, z1, lc, 7)
+gmsh.model.geo.addPoint(x0, y0, z0, lc, 8)
+
 # edges (dim=1)
 gmsh.model.geo.addLine(1, 2, 1)
 gmsh.model.geo.addLine(2, 3, 2)

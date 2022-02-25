@@ -45,7 +45,7 @@ def find_cells_at_nodes(cells, node_count, cell_start_index):	# depending on the
             node_connectivity[node].add(cell_index)
         cell_index += 1
     if node_connectivity.count(set()) > 0:
-        unconnected_nodes =  [ node for node in range(node_count) if node_connectivity[node]==set() ] 
+        unconnected_nodes = [ node for node in range(node_count) if node_connectivity[node]==set() ] 
         print("Points not connected with domain cells:")
         print(unconnected_nodes)
     return node_connectivity
@@ -65,7 +65,7 @@ def find_connected_domain_cells(boundary_cells_values, domain_cells_at_node):
             connected_domain_cells.append(domain_cells_at_node[node])
         common_domain_cells = set.intersection(*connected_domain_cells) 
         number_of_connected_domain_cells = len(common_domain_cells)
-        domain_cells_number[cell_index]=number_of_connected_domain_cells
+        domain_cells_number[cell_index] = number_of_connected_domain_cells
         if number_of_connected_domain_cells == 1:	# there should be one domain cell for each boundary cell, however cells of boundary dimension may be in the domain (e.g. as sources)
             domain_cells_array[cell_index] = common_domain_cells.pop()  # assign only one (unique) connected dmain cell
         elif number_of_connected_domain_cells <1 and not warned_lt1:
@@ -115,8 +115,8 @@ if __name__ == '__main__':  # run, if called from the command line
     # parsing command line arguments
     parser = argparse.ArgumentParser()
     parser = argparse.ArgumentParser(
-        description="Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-submeshes and saves them in vtu-format. Note that all mesh entities should belong to physical groups.",
-        epilog="Tested with Meshio "
+        description = "Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-submeshes and saves them in vtu-format. Note that all mesh entities should belong to physical groups.",
+        epilog = "Tested with Meshio "
         + tested_meshio_version
         + " and Gmsh "
         + tested_gmsh_version
@@ -126,45 +126,45 @@ if __name__ == '__main__':  # run, if called from the command line
     parser.add_argument(
         "-g",
         "--ogs",
-        action="store_true",
-        help='rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32',
+        action = "store_true",
+        help = 'rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32',
     )
     parser.add_argument(
         "-r",
         "--rdcd",
-        action="store_true",
-        help="renumber domain cell data, physical IDs (cell data) of domains get numbered beginning with zero",
+        action = "store_true",
+        help = "renumber domain cell data, physical IDs (cell data) of domains get numbered beginning with zero",
     )
     parser.add_argument(
         "-a",
         "--ascii",
-        action="store_true",	
-        help="save output files (*.vtu) in ascii format",
+        action = "store_true",	
+        help = "save output files (*.vtu) in ascii format",
     )
     parser.add_argument(
         "-d",
         "--dim",
-        type=int,
-        default=0,
-        help="spatial dimension (1, 2 or 3), trying automatic detection, if not given",
+        type = int,
+        default = 0,
+        help = "spatial dimension (1, 2 or 3), trying automatic detection, if not given",
     )
     parser.add_argument(
         "-o",
         "--output",
-        default="",
-        help="basename of output files; if not given, then it defaults to basename of inputfile",
+        default = "",
+        help = "basename of output files; if not given, then it defaults to basename of inputfile",
     )
     parser.add_argument(
         "-z",
         "--delz",
-        action="store_true",
-        help="deleting z-coordinate, for 2D-meshes with z=0, note that vtu-format requires 3D points",
+        action = "store_true",
+        help = "deleting z-coordinate, for 2D-meshes with z=0, note that vtu-format requires 3D points",
     )
     parser.add_argument(
         "-s",
         "--swapxy",
-        action="store_true",
-        help="swap x and y coordinate",
+        action = "store_true",
+        help = "swap x and y coordinate",
     )
     parser.add_argument('-v', '--version', action='version', version=msh2vtu_version) 
     #parser.parse_args(['--version'])
@@ -198,7 +198,7 @@ if __name__ == '__main__':  # run, if called from the command line
     )
     field_data = mesh.field_data
     number_of_original_points = len(points)
-    existing_cell_types=set(mesh.cells_dict.keys())   # elements found in mesh
+    existing_cell_types = set(mesh.cells_dict.keys())   # elements found in mesh
     
     print("Original mesh (read)")
     print_info(mesh)
@@ -207,29 +207,29 @@ if __name__ == '__main__':  # run, if called from the command line
     print('##')
     
     # check if element types are supported in current version of this script
-    all_available_cell_types=set()	# initial value
+    all_available_cell_types = set()	# initial value
     for cell_types in available_cell_types.values():	
-        all_available_cell_types=all_available_cell_types.union(cell_types)
+        all_available_cell_types = all_available_cell_types.union(cell_types)
     for cell_type in existing_cell_types:
         if cell_type not in all_available_cell_types:
             warnings.warn('Unsupported cell type found')
     
     # set spatial dimension of mesh
-    if args.dim==0:
+    if args.dim == 0:
         # automatically detect spatial dimension of mesh
-        dim=dim0	# initial value
+        dim = dim0	# initial value
         for test_dim, test_cell_types in available_cell_types.items():
             if len(test_cell_types.intersection(existing_cell_types)) and test_dim>dim:
-                dim=test_dim
+                dim = test_dim
     
         print('Detected mesh dimension: ' + str(dim))
         print('##')
     else:
-        dim=args.dim	# trust the user
+        dim = args.dim	# trust the user
     
     # delete third dimension if wanted by user  
     if args.delz:
-        if dim<=dim2:
+        if dim <= dim2:
             print("Remove z coordinate of all points.")
             mesh.prune_z_0()
             points = mesh.points   # update variable
@@ -243,17 +243,17 @@ if __name__ == '__main__':  # run, if called from the command line
     
     # boundary and domain cell types depend on dimension
     if dim1<=dim and dim<=dim3:
-        boundary_dim=dim-1
-        domain_dim=dim
-        boundary_cell_types=existing_cell_types.intersection(available_cell_types[boundary_dim])
-        domain_cell_types=existing_cell_types.intersection(available_cell_types[domain_dim])
+        boundary_dim = dim-1
+        domain_dim = dim
+        boundary_cell_types = existing_cell_types.intersection(available_cell_types[boundary_dim])
+        domain_cell_types = existing_cell_types.intersection(available_cell_types[domain_dim])
     else:
         warnings.warn("Error, invalid dimension dim=" + str(dim) + "!")
         sys.exit()
     
     # Check for existence of physical groups 
     if gmsh_physical_cell_data_key in cell_data_dict:
-        physical_groups_found=True
+        physical_groups_found = True
     
         # if user wants physical group numbering of domains beginning with zero
         id_offset = 0  # initial value, zero will not change anything
@@ -268,13 +268,13 @@ if __name__ == '__main__':  # run, if called from the command line
     
     else:
         print("No physical groups found.") 
-        physical_groups_found=False
+        physical_groups_found = False
     
     
     ###############################################################################
     # Extract domain mesh, note that meshio 4.3.3. offers remove_lower_dimensional_cells(), but we want to keep a uniform style for domain and subdomains. Make sure to use domain_mesh=deepcopy(mesh) in this case!
     ###############################################################################
-    all_points=numpy.copy(points)   # copy all, superfluous get deleted later
+    all_points = numpy.copy(points)   # copy all, superfluous get deleted later
     if args.ogs:
         original_point_numbers = numpy.arange(number_of_original_points)   # to associate domain points later
         all_point_data = {}	# dict
@@ -282,7 +282,7 @@ if __name__ == '__main__':  # run, if called from the command line
     else:
         all_point_data = {key: value[:] for key, value in point_data.items()}  # deep copy
     
-    domain_cells=[]	# list
+    domain_cells = []	# list
     if args.ogs:
         domain_cell_data_key = ogs_domain_cell_data_key
     else:
@@ -353,28 +353,28 @@ if __name__ == '__main__':  # run, if called from the command line
     ###############################################################################
     
     # points, process full list (all points), later trimmed according to cell selection, deep copy needed because removed_orphaned_nodes() operates on shallow copy of point_data
-    all_points=numpy.copy(points) # copy again, in case previous remove_orphaned_nodes() affected all_points
+    all_points = numpy.copy(points) # copy again, in case previous remove_orphaned_nodes() affected all_points
     
     if args.ogs:	
-        all_point_data={}	# dict
-        all_point_data[ogs_point_data_key]= numpy.uint64(original2domain_point_table)  # now containing domain node numbers
+        all_point_data = {}	# dict
+        all_point_data[ogs_point_data_key] = numpy.uint64(original2domain_point_table)  # now containing domain node numbers
     else:
         all_point_data = {key: value[:] for key, value in point_data.items()}  # deep copy
     
     # cells and cell data
-    boundary_cells=[]	# list
-    boundary_cell_data={}	# dict
+    boundary_cells = []	# list
+    boundary_cell_data = {}	# dict
     if args.ogs:
         boundary_cell_data_key = ogs_boundary_cell_data_key
     else:
         boundary_cell_data_key = gmsh_physical_cell_data_key
-    boundary_cell_data[boundary_cell_data_key]=[]	# list
+    boundary_cell_data[boundary_cell_data_key] = []	# list
     
     for boundary_cell_type in boundary_cell_types:
             
         # cells 
         boundary_cells_values = cells_dict[boundary_cell_type] 	# preliminary, as there may be cells of boundary dimension inside domain (i.e. which are no boundary cells)
-        connected_cells, connected_cells_count  = numpy.uint64( find_connected_domain_cells(boundary_cells_values, domain_cells_at_node) )
+        connected_cells, connected_cells_count = numpy.uint64( find_connected_domain_cells(boundary_cells_values, domain_cells_at_node) )
         boundary_index = connected_cells_count == 1	# a boundary cell is connected with exactly one domain cell
         if not boundary_index.all():
             print("For information, there are cells of boundary dimension not on the boundary (e.g. inside domain).")
@@ -385,18 +385,18 @@ if __name__ == '__main__':  # run, if called from the command line
             print("Cells of type " + boundary_cell_type + " not connected to any domain cell:")
             print(boundary_cells_values[zero_connection_index])
             
-        boundary_cells_values=boundary_cells_values[boundary_index]  # final boundary cells
+        boundary_cells_values = boundary_cells_values[boundary_index]  # final boundary cells
         boundary_cells_block = (boundary_cell_type, boundary_cells_values)
         boundary_cells.append(boundary_cells_block)
     
         # cell_data
         if physical_groups_found:
             if boundary_cell_type in cell_data_dict[gmsh_physical_cell_data_key]: 
-                boundary_in_physical_group=True
+                boundary_in_physical_group = True
             else:
-                boundary_in_physical_group=False
+                boundary_in_physical_group = False
         else:
-            boundary_in_physical_group=False
+            boundary_in_physical_group = False
     
         if args.ogs:
             boundary_cell_data_values = connected_cells[boundary_index]
@@ -404,7 +404,7 @@ if __name__ == '__main__':  # run, if called from the command line
             if boundary_in_physical_group:
                 boundary_cell_data_values = cell_data_dict[gmsh_physical_cell_data_key][boundary_cell_type] 
             else:   
-                number_of_boundary_cells=len(boundary_cells_values) # cells of specific type
+                number_of_boundary_cells = len(boundary_cells_values) # cells of specific type
                 boundary_cell_data_values = numpy.zeros((number_of_boundary_cells), dtype=int)
                 print("Some boundary cells are not in a physical group, their PhysicalID is set to zero.")
         boundary_cell_data[boundary_cell_data_key].append(boundary_cell_data_values)
@@ -431,26 +431,26 @@ if __name__ == '__main__':  # run, if called from the command line
         ph_id = data[ph_index]  # selection by physical id (user defined)
         subdomain_dim = data[geo_index]  # 0 or 1 or 2 or 3
         if dim0<=subdomain_dim and subdomain_dim<=dim3:
-            subdomain_cell_types=existing_cell_types.intersection(available_cell_types[subdomain_dim])
+            subdomain_cell_types = existing_cell_types.intersection(available_cell_types[subdomain_dim])
         else:
             warnings.warn("Invalid dimension found in physical groups.")
             continue
         
-        all_points=numpy.copy(points)
+        all_points = numpy.copy(points)
         # point data, make another copy due to possible changes by previous actions
         if args.ogs:	
-            all_point_data={}	# dict
-            all_point_data[ogs_point_data_key]= numpy.uint64(original2domain_point_table) 
+            all_point_data = {}	# dict
+            all_point_data[ogs_point_data_key] = numpy.uint64(original2domain_point_table) 
         else:
             all_point_data = {key: value[:] for key, value in point_data.items()}  # deep copy
     
         # cells, cell_data
-        subdomain_cells=[]		# list
-        subdomain_cell_data={}	# dict
+        subdomain_cells = []		# list
+        subdomain_cell_data = {}	# dict
         if args.ogs:
-            if subdomain_dim==domain_dim:
+            if subdomain_dim == domain_dim:
                 subdomain_cell_data_key = ogs_domain_cell_data_key
-            elif subdomain_dim==boundary_dim:
+            elif subdomain_dim == boundary_dim:
                 subdomain_cell_data_key = ogs_boundary_cell_data_key
             else:
                 subdomain_cell_data_key = gmsh_physical_cell_data_key	# use gmsh, as the requirements from OGS
@@ -465,7 +465,7 @@ if __name__ == '__main__':  # run, if called from the command line
             selection_index = cell_data_dict[gmsh_physical_cell_data_key][cell_type] == ph_id
             selection_cells_values = cells_dict[cell_type][selection_index]
             if len(selection_cells_values):  # if there are some data
-                selection_cells_block=(cell_type, selection_cells_values)
+                selection_cells_block = (cell_type, selection_cells_values)
                 subdomain_cells.append(selection_cells_block)
     
                 # cell data
@@ -477,7 +477,7 @@ if __name__ == '__main__':  # run, if called from the command line
                         selection_cell_data_values = numpy.uint64(connected_cells)
                         if not boundary_index.all():  
                             print("In physical group " + name + " are bulk_elem_ids not uniquely defined, e.g. for cells of boundary dimension inside the domain, and thus not written. If bulk_elem_ids should be written for a physical group, then make sure all its cells of boundary dimension are located at the boundary.")
-                            subdomain_cell_data_trouble=True
+                            subdomain_cell_data_trouble = True
                     elif subdomain_dim == domain_dim: 
                         selection_cell_data_values = numpy.int32( cell_data_dict[gmsh_physical_cell_data_key][cell_type][selection_index] -id_offset )
                     

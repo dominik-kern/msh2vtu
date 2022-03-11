@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Author: Dominik Kern (TU Bergakademie Freiberg)
-# Python version 3.9.7
+# Python version 3.9.9
 import meshio  # https://github.com/nschloe/meshio
 import os
 import sys
@@ -8,18 +8,20 @@ import numpy
 import argparse
 import warnings
 
-
-# 	obsolete auxiliary function needed for meshio version 4.0.16
-# def line_mesh_prune(points, input_cells):  # remove orphaned points
-#    # "old" means from the input mesh and "new" the mesh of connected points only
-#    original_shape = input_cells.shape  # for reconstrution after flatten
-#    old_points = input_cells.flatten()  # 1d-array needed
-#    unique_points, unique_inverse = numpy.unique(old_points, return_inverse=True)
-#    new_points = points[unique_points]  # extract only used nodes
-#    new_cells = unique_inverse.reshape(original_shape)  # update cell connectivity
-#    return new_points, new_cells
-
 # runfile('msh2vtu.py', args='../tests/square_tri.msh')
+# runfile('msh2vtu.py', args='/home/dominik/Downloads/test.msh')
+
+
+# 	auxiliary function needed for meshio version <4.0.16 or >=5.0.0
+def my_remove_orphaned_nodes(points, input_cell_block):  
+    # "old" means from the input mesh and "new" the mesh of connected points only
+    input_cells = input_cell_block[0][1]
+    original_shape = input_cells.shape  # for reconstrution after flatten
+    old_points = input_cells.flatten()  # 1d-array needed
+    unique_points, unique_inverse = numpy.unique(old_points, return_inverse=True)
+    new_points = points[unique_points]  # extract only used nodes
+    new_cells = unique_inverse.reshape(original_shape)  # update cell connectivity
+    return new_points, new_cells
 
 
 # print info for mesh: statistics and data field names
@@ -101,9 +103,11 @@ if __name__ == '__main__':  # run, if called from the command line
     tested_gmsh_version = "4.4.6"
     msh2vtu_version = "0.4"
     
+    print(f"MeshIO {meshio.__version__} found, MSH2VTU was tested with MeshIO {tested_meshio_version}.")
     if meshio.__version__ < tested_meshio_version:
         warnings.warn(
-            "Warning, out-dated MeshIO version. In case of errors watch for commented code fragments from previous versions in this script (msh2vtu)."
+            "Warning, out-dated MeshIO version. In case of errors watch for commented code fragments from previous versions in this script (msh2vtu).",
+            stacklevel=2
         )
     elif meshio.__version__ > tested_meshio_version:
         print(
@@ -176,9 +180,9 @@ if __name__ == '__main__':  # run, if called from the command line
         filename_without_extension = os.path.splitext(args.filename)[0]
         file_extension = os.path.splitext(args.filename)[1]
         if file_extension != ".msh":
-            warnings.warn("Warning, input file seems not to be in gmsh-format (*.msh)")
+            warnings.warn("Warning, input file seems not to be in gmsh-format (*.msh)", stacklevel=2)
     else:
-        warnings.warn("No input file (mesh) found.")
+        warnings.warn("No input file (mesh) found.", stacklevel=2)
         raise FileNotFoundError
     
     # derive output filenames
@@ -212,7 +216,7 @@ if __name__ == '__main__':  # run, if called from the command line
         all_available_cell_types = all_available_cell_types.union(cell_types)
     for cell_type in existing_cell_types:
         if cell_type not in all_available_cell_types:
-            warnings.warn('Unsupported cell type found')
+            warnings.warn('Unsupported cell type found', stacklevel=2)
     
     # set spatial dimension of mesh
     if args.dim == 0:
@@ -248,7 +252,7 @@ if __name__ == '__main__':  # run, if called from the command line
         boundary_cell_types = existing_cell_types.intersection(available_cell_types[boundary_dim])
         domain_cell_types = existing_cell_types.intersection(available_cell_types[domain_dim])
     else:
-        warnings.warn("Error, invalid dimension dim=" + str(dim) + "!")
+        warnings.warn("Error, invalid dimension dim=" + str(dim) + "!", stacklevel=2)
         sys.exit()
     
     # Check for existence of physical groups 
@@ -321,9 +325,10 @@ if __name__ == '__main__':  # run, if called from the command line
     if len(domain_cells):   
         domain_mesh = meshio.Mesh( points=all_points, point_data=all_point_data, cells=domain_cells, cell_data=domain_cell_data)
         # domain_mesh.prune()	# for older meshio version (4.0.16)
-        # domain_mesh.remove_orphaned_nodes()  # may cause trouble with meshio < 4.3.6 
+        if meshio.__version__ <= tested_meshio_version:
+            domain_mesh.remove_orphaned_nodes()   
         if len(domain_mesh.points) != number_of_original_points: 
-            warnings.warn( "There are nodes out of the domain mesh. If ogs option is set, then no bulk_node_id can be assigned to these nodes.")
+            warnings.warn( "There are nodes out of the domain mesh. If ogs option is set, then no bulk_node_id can be assigned to these nodes.", stacklevel=2)
         meshio.write( output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii )
         print("Domain mesh (written)")
         print_info(domain_mesh)
@@ -412,7 +417,8 @@ if __name__ == '__main__':  # run, if called from the command line
     boundary_mesh = meshio.Mesh( points=all_points, point_data=all_point_data, cells=boundary_cells, cell_data=boundary_cell_data )
     if len(boundary_cells):
         #print(boundary_cells)
-        #boundary_mesh.remove_orphaned_nodes()
+        if meshio.__version__ <= tested_meshio_version:
+            boundary_mesh.remove_orphaned_nodes()
         meshio.write( output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii )
         print("Boundary mesh (written)")
         print_info(boundary_mesh)
@@ -433,7 +439,7 @@ if __name__ == '__main__':  # run, if called from the command line
         if dim0<=subdomain_dim and subdomain_dim<=dim3:
             subdomain_cell_types = existing_cell_types.intersection(available_cell_types[subdomain_dim])
         else:
-            warnings.warn("Invalid dimension found in physical groups.")
+            warnings.warn("Invalid dimension found in physical groups.", stacklevel=2)
             continue
         
         all_points = numpy.copy(points)
@@ -496,7 +502,9 @@ if __name__ == '__main__':  # run, if called from the command line
             submesh = meshio.Mesh(points=all_points, point_data=all_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
     
         if len(subdomain_cells):
-            #submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
+            if meshio.__version__ <= tested_meshio_version:
+                submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
+                
             outputfilename = output_basename + "_physical_group_" + name + ".vtu"
             meshio.write(outputfilename, submesh, binary=not args.ascii)
             print("Submesh " + name + " (written)")

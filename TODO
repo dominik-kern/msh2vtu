@@ -1,4 +1,4 @@
-Adapt to MeshIO v. 5.x.y, find a substitute for remove_orphaned_nodes()
+Adapt to MeshIO v. 5.x.y, find a substitute for remove_orphaned_nodes(), either include MeshIOmod-tool or update former my_remove_orphaned_nodes() to new data structures
 
 handle physical group integer IDs
 

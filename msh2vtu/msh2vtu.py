@@ -20,7 +20,7 @@ def my_remove_orphaned_nodes(my_mesh):
     
     connected_point_index = numpy.array([])
     for cell_block in my_mesh.cells:
-        cell_block_values = cell_block[1]  # cell_type = cell_block[0]
+        cell_block_values = cell_block.data
         connected_point_index = numpy.concatenate([connected_point_index, cell_block_values.flatten()]).astype(int)
  
     unique_point_index = numpy.unique(connected_point_index)
@@ -38,13 +38,12 @@ def my_remove_orphaned_nodes(my_mesh):
     
     output_cell_blocks = []
     for cell_block in my_mesh.cells:
-        cell_type  = cell_block[0]
-        cell_block_values = cell_block[1]
+        cell_type  = cell_block.type
+        cell_block_values = cell_block.data
         updated_values = old2new[cell_block_values].astype(int)   
         output_cell_blocks.append(meshio.CellBlock(cell_type, updated_values))      
     # cell data are not affected by point changes
-    
-    my_mesh.cells = output_cell_blocks
+    my_mesh.cells = output_cell_blocks  # update cells
     
     return None
 
@@ -135,10 +134,7 @@ if __name__ == '__main__':  # run, if called from the command line
             stacklevel=2
         )
     elif meshio.__version__ > tested_meshio_version:
-        print(
-            "Newer version of MeshIO than supported. Backward compatibility may be missing!"
-        )
-        print("MeshIO version > 5.0 brings relevant changes. MSH2VTU will catch up as PyVista does so.")
+        print(            "Newer version of MeshIO than supported. Backward compatibility may be missing!")
     print('##')
     
     # parsing command line arguments
@@ -232,7 +228,7 @@ if __name__ == '__main__':  # run, if called from the command line
     print("Original mesh (read)")
     print_info(mesh)
     print("Trying to save original mesh as vtu-file (possibly not all features may be saved)")
-    meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)
+    meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)   # there seems to be a bug
     print('##')
     
     # check if element types are supported in current version of this script

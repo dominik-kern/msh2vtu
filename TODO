@@ -1,8 +1,8 @@
-Adapt to MeshIO v. 5.x.y, find a substitute for remove_orphaned_nodes(), either include MeshIOmod-tool or update former my_remove_orphaned_nodes() to new data structures
+reactivate writing of original file
 
 handle physical group integer IDs
 
-Offer option to check 2D meshes for common surface normale (n=(P2-P1 x P3-P1), sign(n*ez or e_user) and possibly enforce it (change element connectivity)
+Offer option to check 2D meshes for common surface normals (n=(P2-P1 x P3-P1), sign(n*ez or e_user) and possibly enforce it (change element connectivity)
   
 Try msh2vtu on further Gmsh tutorial examples
 

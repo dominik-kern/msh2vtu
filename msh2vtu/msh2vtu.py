@@ -9,7 +9,7 @@ import argparse
 import warnings
 
 # runfile('msh2vtu.py', args='../tests/square_tri.msh')
-# runfile('msh2vtu.py', args='/home/dominik/Downloads/test.msh')
+# debugfile('msh2vtu.py', args='/home/dominik/Downloads/test.msh')
 
 
 # 	auxiliary function needed for meshio version <4.0.16 or >=5.0.0
@@ -502,9 +502,9 @@ if __name__ == '__main__':  # run, if called from the command line
             submesh = meshio.Mesh(points=all_points, point_data=all_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
     
         if len(subdomain_cells):
-            if meshio.__version__ <= tested_meshio_version:
-                submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
-                
+            #if meshio.__version__ <= tested_meshio_version:
+            #    submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
+            my_remove_orphaned_nodes(submesh.points, subdomain_cells)    
             outputfilename = output_basename + "_physical_group_" + name + ".vtu"
             meshio.write(outputfilename, submesh, binary=not args.ascii)
             print("Submesh " + name + " (written)")

@@ -8,20 +8,45 @@ import numpy
 import argparse
 import warnings
 
-# runfile('msh2vtu.py', args='../tests/square_tri.msh')
-# debugfile('msh2vtu.py', args='/home/dominik/Downloads/test.msh')
+# debugfile('msh2vtu.py', args='/home/dominik/git_repos/msh2vtu/tests/square_tri.msh')
+# runfile('msh2vtu.py', args='/home/dominik/Downloads/test.msh')
 
 
 # 	auxiliary function needed for meshio version <4.0.16 or >=5.0.0
-def my_remove_orphaned_nodes(points, input_cell_block):  
-    # "old" means from the input mesh and "new" the mesh of connected points only
-    input_cells = input_cell_block[0][1]
-    original_shape = input_cells.shape  # for reconstrution after flatten
-    old_points = input_cells.flatten()  # 1d-array needed
-    unique_points, unique_inverse = numpy.unique(old_points, return_inverse=True)
-    new_points = points[unique_points]  # extract only used nodes
-    new_cells = unique_inverse.reshape(original_shape)  # update cell connectivity
-    return new_points, new_cells
+def my_remove_orphaned_nodes(my_mesh):  
+    """own implementation to remove points not belonging to any cell""" 
+    
+    # find connected points and derive mapping from all points to them
+    
+    connected_point_index = numpy.array([])
+    for cell_block in my_mesh.cells:
+        cell_block_values = cell_block[1]  # cell_type = cell_block[0]
+        connected_point_index = numpy.concatenate([connected_point_index, cell_block_values.flatten()]).astype(int)
+ 
+    unique_point_index = numpy.unique(connected_point_index)
+    old2new=numpy.zeros(len(points))       
+    for new_index, old_index in enumerate(unique_point_index):
+        old2new[old_index] = int(new_index)
+    
+    # update mesh to remaining points
+    my_mesh.points = my_mesh.points[unique_point_index]  # update points
+    
+    output_point_data = {}
+    for pd_key, pd_value in my_mesh.point_data.items():
+        output_point_data[pd_key] = pd_value[unique_point_index]
+    my_mesh.point_data = output_point_data    # update point data
+    
+    output_cell_blocks = []
+    for cell_block in my_mesh.cells:
+        cell_type  = cell_block[0]
+        cell_block_values = cell_block[1]
+        updated_values = old2new[cell_block_values].astype(int)   
+        output_cell_blocks.append(meshio.CellBlock(cell_type, updated_values))      
+    # cell data are not affected by point changes
+    
+    my_mesh.cells = output_cell_blocks
+    
+    return None
 
 
 # print info for mesh: statistics and data field names
@@ -326,7 +351,10 @@ if __name__ == '__main__':  # run, if called from the command line
         domain_mesh = meshio.Mesh( points=all_points, point_data=all_point_data, cells=domain_cells, cell_data=domain_cell_data)
         # domain_mesh.prune()	# for older meshio version (4.0.16)
         if meshio.__version__ <= tested_meshio_version:
-            domain_mesh.remove_orphaned_nodes()   
+            domain_mesh.remove_orphaned_nodes()
+        else:
+            my_remove_orphaned_nodes(domain_mesh)      
+            
         if len(domain_mesh.points) != number_of_original_points: 
             warnings.warn( "There are nodes out of the domain mesh. If ogs option is set, then no bulk_node_id can be assigned to these nodes.", stacklevel=2)
         meshio.write( output_basename + "_domain.vtu", domain_mesh, binary=not args.ascii )
@@ -419,6 +447,9 @@ if __name__ == '__main__':  # run, if called from the command line
         #print(boundary_cells)
         if meshio.__version__ <= tested_meshio_version:
             boundary_mesh.remove_orphaned_nodes()
+        else:
+            my_remove_orphaned_nodes(boundary_mesh)  
+            
         meshio.write( output_basename + "_boundary.vtu", boundary_mesh, binary=not args.ascii )
         print("Boundary mesh (written)")
         print_info(boundary_mesh)
@@ -502,9 +533,12 @@ if __name__ == '__main__':  # run, if called from the command line
             submesh = meshio.Mesh(points=all_points, point_data=all_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
     
         if len(subdomain_cells):
-            #if meshio.__version__ <= tested_meshio_version:
-            #    submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
-            my_remove_orphaned_nodes(submesh.points, subdomain_cells)    
+            if meshio.__version__ <= tested_meshio_version:
+                submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
+            else:
+                my_remove_orphaned_nodes(submesh)  
+    
+            
             outputfilename = output_basename + "_physical_group_" + name + ".vtu"
             meshio.write(outputfilename, submesh, binary=not args.ascii)
             print("Submesh " + name + " (written)")

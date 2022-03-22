@@ -1,5 +1,5 @@
 #! /bin/bash
-
+# ckeck if runs finish without errors, results are not yet verified
 
 # run without additional parameters
 for msh in tests/*.msh;  do 

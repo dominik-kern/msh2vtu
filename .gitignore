@@ -4,7 +4,6 @@ intro.ipy
 tests/*.vtu
 tests/*.msh
 tests/*.py
-run_tests
 packaging
 dist/*
 build/*

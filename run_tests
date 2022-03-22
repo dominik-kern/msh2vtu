@@ -1,0 +1,23 @@
+#! /bin/bash
+
+
+# run without additional parameters
+for msh in tests/*.msh;  do 
+    python3 msh2vtu/msh2vtu.py ${msh}; 
+done;
+python3 tests/read_tests_meshs.py
+EXIT_CODE_NO_OPTION=$?
+
+
+# run with ogs parameters
+for msh in tests/*.msh;  do 
+    python3 msh2vtu/msh2vtu.py ${msh} --ogs --rdcd; 
+done;
+python3 tests/read_tests_meshs.py
+EXIT_CODE_OGS_OPTION=$?
+
+
+echo "Exit code of runs without options: $EXIT_CODE_NO_OPTION"
+echo "Exit code of runs with OGS option: $EXIT_CODE_OGS_OPTION"
+
+

@@ -3,7 +3,6 @@ examples/*.vtu
 intro.ipy
 tests/*.vtu
 tests/*.msh
-tests/*.py
 packaging
 dist/*
 build/*

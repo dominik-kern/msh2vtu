@@ -228,7 +228,7 @@ if __name__ == '__main__':  # run, if called from the command line
     print("Original mesh (read)")
     print_info(mesh)
     print("Trying to save original mesh as vtu-file (possibly not all features may be saved)")
-    meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)   # there seems to be a bug
+    #meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)   # there seems to be a bug
     print('##')
     
     # check if element types are supported in current version of this script

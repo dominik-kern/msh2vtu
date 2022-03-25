@@ -124,6 +124,7 @@ if __name__ == '__main__':  # run, if called from the command line
     ogs_boundary_cell_data_key = "bulk_elem_ids"
     
     tested_meshio_version = "5.3.8"
+    first_meshio_version_without_meshtools = "5.0.0"
     tested_gmsh_version = "4.8.4"
     msh2vtu_version = "0.5"
     
@@ -346,7 +347,7 @@ if __name__ == '__main__':  # run, if called from the command line
     if len(domain_cells):   
         domain_mesh = meshio.Mesh( points=all_points, point_data=all_point_data, cells=domain_cells, cell_data=domain_cell_data)
         # domain_mesh.prune()	# for older meshio version (4.0.16)
-        if meshio.__version__ <= tested_meshio_version:
+        if meshio.__version__ < first_meshio_version_without_meshtools:
             domain_mesh.remove_orphaned_nodes()
         else:
             my_remove_orphaned_nodes(domain_mesh)      
@@ -441,7 +442,7 @@ if __name__ == '__main__':  # run, if called from the command line
     boundary_mesh = meshio.Mesh( points=all_points, point_data=all_point_data, cells=boundary_cells, cell_data=boundary_cell_data )
     if len(boundary_cells):
         #print(boundary_cells)
-        if meshio.__version__ <= tested_meshio_version:
+        if meshio.__version__ < first_meshio_version_without_meshtools:
             boundary_mesh.remove_orphaned_nodes()
         else:
             my_remove_orphaned_nodes(boundary_mesh)  
@@ -529,7 +530,7 @@ if __name__ == '__main__':  # run, if called from the command line
             submesh = meshio.Mesh(points=all_points, point_data=all_point_data, cells=subdomain_cells, cell_data=subdomain_cell_data)  
     
         if len(subdomain_cells):
-            if meshio.__version__ <= tested_meshio_version:
+            if meshio.__version__ < first_meshio_version_without_meshtools:
                 submesh.remove_orphaned_nodes() # submesh.prune() for meshio_version 4.0.16
             else:
                 my_remove_orphaned_nodes(submesh)  

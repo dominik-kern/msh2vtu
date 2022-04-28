@@ -25,6 +25,7 @@ Nx =  4
 Ny = 5
 NR = 5
 Nr =  5
+P = 1.3 # Progression towards hole 
 
 # Auxiliary 
 s45 = np.sin(np.pi/4)
@@ -86,21 +87,21 @@ gmsh.model.geo.addPlaneSurface([5], 5)
 gmsh.model.geo.synchronize()
 
 #  Prepare structured grid
-gmsh.model.geo.mesh.setTransfiniteCurve( 1, Nr, "Progression", 1.3)
+gmsh.model.geo.mesh.setTransfiniteCurve( 1, Nr, "Progression", P)
 gmsh.model.geo.mesh.setTransfiniteCurve( 2, Nx)
 gmsh.model.geo.mesh.setTransfiniteCurve( 3, NR)
 gmsh.model.geo.mesh.setTransfiniteCurve( 4, Ny)
 gmsh.model.geo.mesh.setTransfiniteCurve( 5, Nx)
 gmsh.model.geo.mesh.setTransfiniteCurve( 6, NR)
 gmsh.model.geo.mesh.setTransfiniteCurve( 7, Ny)
-gmsh.model.geo.mesh.setTransfiniteCurve( 8, Nr, "Progression",-1.3) # note direction
+gmsh.model.geo.mesh.setTransfiniteCurve( 8, Nr, "Progression",-P) # note direction
 gmsh.model.geo.mesh.setTransfiniteCurve( 9, NR)
 gmsh.model.geo.mesh.setTransfiniteCurve(10, NR)
 gmsh.model.geo.mesh.setTransfiniteCurve(11, NR)
 gmsh.model.geo.mesh.setTransfiniteCurve(12, Nx)
 gmsh.model.geo.mesh.setTransfiniteCurve(13, Ny)
 gmsh.model.geo.mesh.setTransfiniteCurve(14, NR)
-gmsh.model.geo.mesh.setTransfiniteCurve(15, Nr, "Progression", 1.3)
+gmsh.model.geo.mesh.setTransfiniteCurve(15, Nr, "Progression", P)
 
 gmsh.model.geo.mesh.setTransfiniteSurface(1, "Alternate")
 gmsh.model.geo.mesh.setTransfiniteSurface(2, "Alternate")

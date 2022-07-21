@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.9
 # Author: Dominik Kern (TU Bergakademie Freiberg)
 # Python version 3.9.9
 import meshio  # https://github.com/nschloe/meshio

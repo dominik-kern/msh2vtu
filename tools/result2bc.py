@@ -1,5 +1,5 @@
 '''
-Extracts some boundary values from a result file (domain mesh) and adds them as cell data to a boundary mesh (subdomain mesh).
+Extracts some boundary values from a result file (domain mesh) and adds them as point data to a boundary mesh (subdomain mesh).
 This is frequent task for simulation sequences with OpenGeoSys.
 '''
 import meshio

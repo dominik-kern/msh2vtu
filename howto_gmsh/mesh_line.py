@@ -1,4 +1,4 @@
-# mesh unit square with triangle elements (higher order)
+# mesh unit line with line elements (higher order)
 import numpy
 import gmsh
 

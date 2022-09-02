@@ -24,11 +24,11 @@ z1 = 1.0
 gmsh.model.geo.addPoint(x1, y0, z0, lc, 1)
 gmsh.model.geo.addPoint(x1, y1, z0, lc, 2)
 gmsh.model.geo.addPoint(x0, y1, z0, lc, 3)
-gmsh.model.geo.addPoint(x0, y0, z1, lc, 4)
-gmsh.model.geo.addPoint(x1, y0, z1, lc, 5)
-gmsh.model.geo.addPoint(x1, y1, z1, lc, 6)
-gmsh.model.geo.addPoint(x0, y1, z1, lc, 7)
-gmsh.model.geo.addPoint(x0, y0, z0, lc, 8)
+gmsh.model.geo.addPoint(x0, y0, z0, lc, 4)
+#gmsh.model.geo.addPoint(x1, y0, z1, lc, 5)
+#gmsh.model.geo.addPoint(x1, y1, z1, lc, 6)
+#gmsh.model.geo.addPoint(x0, y1, z1, lc, 7)
+#gmsh.model.geo.addPoint(x0, y0, z0, lc, 8)
 
 # edges (dim=1)
 gmsh.model.geo.addLine(1, 2, 1)
@@ -53,7 +53,7 @@ gmsh.model.geo.mesh.setRecombine(dim2, 1)
 # volume (dim=3)
 # extrusion of a surface creates: top surface, volume, side surfaces
 # parameters: (dim, tag), x,y,z, divisions per layer, heights per layer, Recombine
-newEntities=gmsh.model.geo.extrude([(dim2, 1)], 0, 0, 0.5, [2], [], True)
+newEntities=gmsh.model.geo.extrude([(dim2, 1)], 0, 0, z1-z0, [2], [], True)
 top_tag=newEntities[0][1]
 vol_tag=newEntities[1][1]
 side_tags=[nE[1] for nE in newEntities[2:] ]

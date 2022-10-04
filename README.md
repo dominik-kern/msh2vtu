@@ -1,9 +1,7 @@
-**There seems to be trouble with the latest versions of GMSH and/or MESHIO, I will try to catch up as soon as I can.**
-
 # msh2vtu
 
 This script depends on [meshio](https://github.com/nschloe/meshio).
-It was tested with meshio 4.4.0 [Python 3.9.9] and gmsh 4.4.1.
+It was tested with meshio 5.3.4 [Python 3.10.6] and gmsh 4.10.5.
 
 Supported element types
 - lines (linear and quadratic) in 1D

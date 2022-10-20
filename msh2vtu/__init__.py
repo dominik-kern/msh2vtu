@@ -24,7 +24,7 @@ def my_remove_orphaned_nodes(my_mesh):
         connected_point_index = numpy.concatenate([connected_point_index, cell_block_values.flatten()]).astype(int)
  
     unique_point_index = numpy.unique(connected_point_index)
-    old2new=numpy.zeros(len(points))       
+    old2new=numpy.zeros(len(my_mesh.points))       
     for new_index, old_index in enumerate(unique_point_index):
         old2new[old_index] = int(new_index)
     

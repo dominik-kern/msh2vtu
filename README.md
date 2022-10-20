@@ -4,13 +4,16 @@ This script depends on [meshio](https://github.com/nschloe/meshio).
 It was tested with meshio 5.3.4 [Python 3.10.6] and gmsh 4.10.5.
 
 Supported element types
+
 - lines (linear and quadratic) in 1D
 - triangles and quadrilaterals (linear and quadratic) in 2D
-- tetra- and hexahedrons (linear and quadratic) in 3D 
+- tetra- and hexahedrons (linear and quadratic) in 3D
 
-**Usage:**
+## Usage
+
 ```
-msh2vtu.py [-h] [-g] [-r] [-a] [-d DIM] [-o OUTPUT] [-z] [-s] [-v] filename
+pip install msh2vtu
+msh2vtu [-h] [-g] [-r] [-a] [-d DIM] [-o OUTPUT] [-z] [-s] [-v] filename
 
 Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-submeshes
 and saves them in vtu-format. Note that all mesh entities should belong to physical groups.
@@ -35,18 +38,40 @@ optional arguments:
 
 ```
 
-**Examples:**
+## Examples
+
 A geological model (2D) of a sediment basin by Christian Silbermann and a terrain model (3D) from the official Gmsh tutorials (x2).
 
-``python3 msh2vtu example/geolayers_2d.msh`` generates from the input file *geolayers_2d.msh* (gmsh 4.4.1):
+``msh2vtu example/geolayers_2d.msh`` generates from the input file *geolayers_2d.msh* (gmsh 4.4.1):
 
 - *geolayers_2d_boundary.vtu*
-- *geolayers_2d_domain.vtu*                 
+- *geolayers_2d_domain.vtu*
 - *geolayers_2d_physical_group_RockBed.vtu*
 - *geolayers_2d_physical_group_SedimentLayer1.vtu*
 - *geolayers_2d_physical_group_SedimentLayer2.vtu*
 - *geolayers_2d_physical_group_SedimentLayer3.vtu*
 - *geolayers_2d_physical_group_Bottom.vtu*  
-- *geolayers_2d_physical_group_Left.vtu*    
+- *geolayers_2d_physical_group_Left.vtu*
 - *geolayers_2d_physical_group_Right.vtu*
 - *geolayers_2d_physical_group_Top.vtu*
+
+## Build instructions
+
+Local development:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+msh2vtu --help
+```
+
+Distribution:
+
+```bash
+# python -m venv .venv
+# source .venv/bin/activate
+pip install --upgrade build twine
+python -m build
+python -m twine upload [--repository testpypi] dist/*
+```

@@ -1,7 +1,7 @@
 # mesh unit square with triangle elements and run msh2vtu directly
 import numpy   # for numerics
 import gmsh   # for meshing
-from msh2vtu import run   # for mesh conversion
+from msh2vtu import run   # to run mesh conversion
 import sys   # to emulate command line call
 import argparse   # to parse emulated command line call
 parser = argparse.ArgumentParser()

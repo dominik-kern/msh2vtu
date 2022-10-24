@@ -1,11 +1,10 @@
-#!/usr/bin/env python3.9
+#!/usr/bin/env python3.10
 # Author: Dominik Kern (TU Bergakademie Freiberg)
-# Python version 3.9.9
+# Python version 3.10.6
 import meshio  # https://github.com/nschloe/meshio
 import os
 import sys
 import numpy
-import argparse
 import warnings
 
 # debugfile('msh2vtu.py', args='/home/dominik/git_repos/msh2vtu/tests/square_tri.msh')
@@ -108,7 +107,7 @@ def find_connected_domain_cells(boundary_cells_values, domain_cells_at_node):
     return domain_cells_array, domain_cells_number
 
 
-def main():
+def run(args):
     # some variable declarations
     ph_index = 0	# to access physical group id in field data
     geo_index = 1	# to access geometrical dimension in field data
@@ -122,12 +121,7 @@ def main():
     gmsh_physical_cell_data_key = "gmsh:physical"	
     ogs_domain_cell_data_key = "MaterialIDs"
     ogs_boundary_cell_data_key = "bulk_elem_ids"
-    
-    tested_meshio_version = "5.3.8"
-    first_meshio_version_without_meshtools = "5.0.0"
-    tested_gmsh_version = "4.8.4"
-    msh2vtu_version = "0.5"
-    
+            
     print(f"MeshIO {meshio.__version__} found, MSH2VTU was tested with MeshIO {tested_meshio_version}.")
     if meshio.__version__ < tested_meshio_version:
         warnings.warn(
@@ -138,64 +132,17 @@ def main():
         print(            "Newer version of MeshIO than supported. Backward compatibility may be missing!")
     print('##')
     
-    # parsing command line arguments
-    parser = argparse.ArgumentParser()
-    parser = argparse.ArgumentParser(
-        description = "Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-submeshes and saves them in vtu-format. Note that all mesh entities should belong to physical groups.",
-        epilog = "Tested with Meshio "
-        + tested_meshio_version
-        + " and Gmsh "
-        + tested_gmsh_version
-        + ". Check for changes between versions, if there are errors.",
-    )
-    parser.add_argument("filename", help="Gmsh mesh file (*.msh) as input data")
-    parser.add_argument(
-        "-g",
-        "--ogs",
-        action = "store_true",
-        help = 'rename "gmsh:physical" to "MaterialIDs" for domains and change type of corresponding cell data to INT32',
-    )
-    parser.add_argument(
-        "-r",
-        "--rdcd",
-        action = "store_true",
-        help = "renumber domain cell data, physical IDs (cell data) of domains get numbered beginning with zero",
-    )
-    parser.add_argument(
-        "-a",
-        "--ascii",
-        action = "store_true",	
-        help = "save output files (*.vtu) in ascii format",
-    )
-    parser.add_argument(
-        "-d",
-        "--dim",
-        type = int,
-        default = 0,
-        help = "spatial dimension (1, 2 or 3), trying automatic detection, if not given",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default = "",
-        help = "basename of output files; if not given, then it defaults to basename of inputfile",
-    )
-    parser.add_argument(
-        "-z",
-        "--delz",
-        action = "store_true",
-        help = "deleting z-coordinate, for 2D-meshes with z=0, note that vtu-format requires 3D points",
-    )
-    parser.add_argument(
-        "-s",
-        "--swapxy",
-        action = "store_true",
-        help = "swap x and y coordinate",
-    )
-    parser.add_argument('-v', '--version', action='version', version=msh2vtu_version) 
-    #parser.parse_args(['--version'])
-    
-    args = parser.parse_args()
+    # ###
+    # Here was the parser, filling structure variable args
+    # args.filename
+    # args.output = ""
+    # args.dim = 0
+    # args.delz
+    # args.swapxy
+    # args.rdcd
+    # args.ogs
+    # args.ascii
+    # ###
    
     # check if input file exists and is in gmsh-format
     if os.path.isfile(args.filename):
@@ -542,3 +489,10 @@ def main():
             print_info(submesh)
         else:
             print("Submesh " + name + " empty (not written)")
+
+
+#print("initializing msh2vtu")
+msh2vtu_version = "0.5"
+tested_gmsh_version = "4.8.4"
+tested_meshio_version = "5.3.8"   
+first_meshio_version_without_meshtools = "5.0.0"

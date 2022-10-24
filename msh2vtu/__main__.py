@@ -7,7 +7,7 @@ if __name__ == "__main__":
     # parsing command line arguments
     parser = argparse.ArgumentParser()
     parser = argparse.ArgumentParser(
-        description = "Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-submeshes and saves them in vtu-format. Note that all mesh entities should belong to physical groups.",
+        description = "Prepares a Gmsh-mesh for use in OGS by extracting domain-, boundary- and physical group-submeshes, and saves them in vtu-format. Note that all mesh entities should belong to physical groups.",
         epilog = "Tested with Meshio "
         + tested_meshio_version
         + " and Gmsh "

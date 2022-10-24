@@ -37,6 +37,18 @@ optional arguments:
   -v, --version         show program's version number and exit
 
 ```
+In addition it may be used as Python module with an emulated command line call
+```
+from msh2vtu import run   # to run mesh conversion
+import sys   # to emulate command line call
+import argparse   # to parse emulated command line call
+parser = argparse.ArgumentParser()
+
+# generate a mesh, e.g. my_mesh.msh with Gmsh
+
+args = argparse.Namespace(filename='my_mesh.msh', output='', dim=0, delz=False, swapxy=False, rdcd=True, ogs=True, ascii=False)   # filename, output="", dim=0, delz, swapxy, rdcd, ogs, ascii
+run(args)
+```
 
 ## Examples
 

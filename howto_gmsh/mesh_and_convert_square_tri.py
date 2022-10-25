@@ -1,4 +1,13 @@
 # mesh unit square with triangle elements and run msh2vtu directly
+#
+# TODO
+#    skip write/read temporary file, access gmsh-directly and create meshioMesh
+#    idx, points, _ = gmsh.model.mesh.getNodes()
+#    elem_types, elem_tags, node_tags = gmsh.model.mesh.getElements()
+#    for dim, tag in gmsh.model.getPhysicalGroups():
+#        name = gmsh.model.getPhysicalName(dim, tag)
+#        cell_sets[name] = [[] for _ in range(len(cells))]
+#        for e in gmsh.model.getEntitiesForPhysicalGroup(dim, tag):
 import numpy   # for numerics
 import gmsh   # for meshing
 from msh2vtu import run   # to run mesh conversion

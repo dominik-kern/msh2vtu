@@ -5,7 +5,7 @@
 for msh in tests/*.msh;  do 
     python3 msh2vtu ${msh}; 
 done;
-python3 tests/read_tests_meshs.py
+python3 tests/read_tests_meshes.py
 EXIT_CODE_NO_OPTION=$?
 
 
@@ -13,7 +13,7 @@ EXIT_CODE_NO_OPTION=$?
 for msh in tests/*.msh;  do 
     python3 msh2vtu ${msh} --ogs --rdcd; 
 done;
-python3 tests/read_tests_meshs.py
+python3 tests/read_tests_meshes.py
 EXIT_CODE_OGS_OPTION=$?
 
 

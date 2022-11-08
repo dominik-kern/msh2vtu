@@ -19,5 +19,5 @@ Physical Curve("oben") = {3};
 Physical Curve("links") = {4};
 Physical Surface("Einheitsquadrat") = {1};
 
-# command for second order serendipity elements:
-# gmsh -2 square_quad.geo -setnumber Mesh.ElementOrder 2 -setnumber Mesh.SecondOrderIncomplete 1
+// command for second order serendipity elements:
+// gmsh -2 square_quad.geo -setnumber Mesh.ElementOrder 2 -setnumber Mesh.SecondOrderIncomplete 1

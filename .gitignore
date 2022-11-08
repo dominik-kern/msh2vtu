@@ -1,8 +1,6 @@
 examples/*.vtu
 .*.swp
-intro.ipy
 tests/*.vtu
-tests/*.msh
 packaging
 dist/*
 build/*

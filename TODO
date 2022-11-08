@@ -1,7 +1,3 @@
-harmonize with OGStools requirements (code formatter, documentation generator, unit tests instead of selfmade)
-
-OOP design (make module accessable in Python and not only via command line)
-
 store bulk element ID of preferred domain for internal boundaries [Aqeel]
 
 reactivate writing of original file

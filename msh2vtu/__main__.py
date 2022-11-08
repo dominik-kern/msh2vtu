@@ -62,4 +62,9 @@ if __name__ == "__main__":
         
     args = parser.parse_args()   
     
-    run(args)
+    ErrorCode = run(args)
+    if ErrorCode ==0:
+        print("msh2vtu successfully finished")
+    else:
+        print("msh2vtu stopped with errors")
+        

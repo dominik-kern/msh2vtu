@@ -152,7 +152,7 @@ def run(args):
             warnings.warn("Warning, input file seems not to be in gmsh-format (*.msh)", stacklevel=2)
     else:
         warnings.warn("No input file (mesh) found.", stacklevel=2)
-        raise FileNotFoundError
+        return 1   # raise FileNotFoundError
     
     # derive output filenames
     if args.output == "":  # no parameter given, use same basename as input file
@@ -222,7 +222,7 @@ def run(args):
         domain_cell_types = existing_cell_types.intersection(available_cell_types[domain_dim])
     else:
         warnings.warn("Error, invalid dimension dim=" + str(dim) + "!", stacklevel=2)
-        sys.exit()
+        return 1   # sys.exit()
     
     # Check for existence of physical groups 
     if gmsh_physical_cell_data_key in cell_data_dict:
@@ -406,7 +406,7 @@ def run(args):
     # name=user-defined name of physical group, data=[physical_id, geometry_id]
     ###############################################################################
     if not physical_groups_found:
-        sys.exit()
+        return 1   # sys.exit()
     
     for name, data in field_data.items():
         ph_id = data[ph_index]  # selection by physical id (user defined)
@@ -489,6 +489,8 @@ def run(args):
             print_info(submesh)
         else:
             print("Submesh " + name + " empty (not written)")
+
+    return 0   # successfully finished
 
 
 #print("initializing msh2vtu")

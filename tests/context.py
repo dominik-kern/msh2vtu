@@ -8,6 +8,6 @@ Created on Tue Nov  8 15:43:40 2022
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))   # tests/.. relative to this file 
 
 import msh2vtu

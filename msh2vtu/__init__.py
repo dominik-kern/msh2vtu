@@ -3,11 +3,11 @@
 # Python version 3.10.6
 import meshio  # https://github.com/nschloe/meshio
 import os
-import sys
+#import sys
 import numpy
 import warnings
 
-# debugfile('msh2vtu.py', args='/home/dominik/git_repos/msh2vtu/tests/square_tri.msh')
+# debugfile('msh2vtu/__main__.py', args='tests/square_tri.msh')   # in top-level dir
 # runfile('msh2vtu.py', args='/home/dominik/Downloads/test.msh')
 
 
@@ -154,7 +154,7 @@ def run(args):
         warnings.warn("No input file (mesh) found.", stacklevel=2)
         return 1   # raise FileNotFoundError
     
-    # derive output filenames
+    # derive output filenames debugfile('msh2vtu/__main__.py', args='t16.msh')
     if args.output == "":  # no parameter given, use same basename as input file
         output_basename = filename_without_extension
     else:
@@ -175,9 +175,9 @@ def run(args):
     
     print("Original mesh (read)")
     print_info(mesh)
-    #print("Trying to save original mesh as vtu-file (possibly not all features may be saved)")
-    #meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)   # there seems to be a bug
-    #print('##')
+    # print("Trying to save original mesh as vtu-file (possibly not all features may be saved)")
+    # meshio.write(output_basename + "_original.vtu", mesh, binary=not args.ascii)   # there seems to be a bug
+    # print('##')
     
     # check if element types are supported in current version of this script
     all_available_cell_types = set()	# initial value
@@ -225,13 +225,30 @@ def run(args):
         return 1   # sys.exit()
     
     # Check for existence of physical groups 
-    if gmsh_physical_cell_data_key in cell_data_dict:
+    if gmsh_physical_cell_data_key in cell_data:
         physical_groups_found = True
+        
+        # reconstruct field data, when empty (physical groups may have a number, but no name)
+        if field_data=={}:   # TODO may there be other field data, than physical groups?
+            # detect dimension by cell type
+            for pg_cell_type, pg_cell_data in cell_data_dict[gmsh_physical_cell_data_key].items():
+                if pg_cell_type in  available_cell_types[dim0]:
+                    pg_dim = dim0
+                if pg_cell_type in  available_cell_types[dim1]:
+                    pg_dim = dim1
+                if pg_cell_type in  available_cell_types[dim2]:
+                    pg_dim = dim2
+                if pg_cell_type in  available_cell_types[dim3]:
+                    pg_dim = dim3
+                pg_ids = numpy.unique(pg_cell_data)
+                for pg_id in pg_ids:
+                    pg_key = "PhysicalGroup_" + str(pg_id)
+                    field_data[pg_key] = numpy.array([pg_id, pg_dim]) 
     
         # if user wants physical group numbering of domains beginning with zero
         id_offset = 0  # initial value, zero will not change anything
         if args.rdcd:  # prepare renumber-domain-cell-data (rdcd)
-            # find minimum physical_id of domains (dim)
+            # find minimum physical_id of domains (dim)            
             id_list_domains = []
             for dataset in field_data.values():  # go through all physical groups
                 if (dataset[geo_index] == domain_dim):  # only for domains, ignore lower dimensional entities
@@ -406,7 +423,7 @@ def run(args):
     # name=user-defined name of physical group, data=[physical_id, geometry_id]
     ###############################################################################
     if not physical_groups_found:
-        return 1   # sys.exit()
+        return 0   # sys.exit()
     
     for name, data in field_data.items():
         ph_id = data[ph_index]  # selection by physical id (user defined)

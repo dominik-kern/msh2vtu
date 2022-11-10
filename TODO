@@ -1,8 +1,6 @@
+store original mesh (cell_sets cannot be saved to vtu-format, so convert them to cell_data)
+
 store bulk element ID of preferred domain for internal boundaries [Aqeel]
-
-reactivate writing of original file
-
-handle physical group integer IDs
 
 offer option to check 2D meshes for common surface normals (n=(P2-P1 x P3-P1), sign(n*ez or e_user) and possibly enforce it (change element connectivity)
   

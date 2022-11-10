@@ -58,7 +58,7 @@ if __name__ == "__main__":
         action = "store_true",
         help = "swap x and y coordinate",
     )
-    parser.add_argument('-v', '--version', action='version', version='msh2vtu {} (Dominik Kern)'.format(msh2vtu_version)) 
+    parser.add_argument('-v', '--version', action='version', version='msh2vtu {}   (Dominik Kern)'.format(msh2vtu_version)) 
         
     args = parser.parse_args()   
     
